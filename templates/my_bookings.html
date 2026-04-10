@@ -1,0 +1,407 @@
+{% extends 'base.html' %}
+{% block title %}My Bookings - SmartPark{% endblock %}
+
+{% block content %}
+
+<div class="page-banner">
+    <div class="container">
+        <h1><i class="fas fa-calendar-alt"></i> My Bookings</h1>
+    </div>
+</div>
+
+<div class="container dashboard-page">
+
+    {% for booking in overstay_bookings %}
+    <div class="overstay-alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <div>
+            <strong>Overstay Fine Alert!</strong>
+            Slot {{ booking.slot.slot_number }} at {{ booking.slot.lot.name }} -
+            your parking time ended at {{ booking.end_time|date:"H:i" }}.
+            Fine applied: <strong>&#8377;{{ booking.fine_amount }}</strong>
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="booking-tabs">
+        <button class="tab-btn active" onclick="showTab('active', this)">
+            <i class="fas fa-parking"></i> Active
+            {% if active_bookings %}<span class="tab-count">{{ active_bookings|length }}</span>{% endif %}
+        </button>
+        <button class="tab-btn" onclick="showTab('completed', this)">
+            <i class="fas fa-check-circle"></i> Completed
+        </button>
+        <button class="tab-btn" onclick="showTab('overstay', this)">
+            <i class="fas fa-exclamation-circle"></i> Overstay
+            {% if overstay_bookings %}<span class="tab-count tab-count-red">{{ overstay_bookings|length }}</span>{% endif %}
+        </button>
+        <button class="tab-btn" onclick="showTab('cancelled', this)">
+            <i class="fas fa-times-circle"></i> Cancelled
+        </button>
+    </div>
+
+    <div id="tab-active" class="tab-content">
+        {% if active_bookings %}
+        <div class="table-wrapper">
+            <table class="bookings-table">
+                <thead>
+                    <tr>
+                        <th>#</th><th>Slot</th><th>Location</th>
+                        <th>Vehicle</th><th>Start</th><th>End</th>
+                        <th>Cost</th><th>Status</th><th>Time Left</th><th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in active_bookings %}
+                    <tr>
+                        <td><strong>{{ booking.id }}</strong></td>
+                        <td><span class="slot-badge">{{ booking.slot.slot_number }}</span></td>
+                        <td>{{ booking.slot.lot.name }}</td>
+                        <td>
+                            {% if booking.vehicle %}
+                                <span class="slot-badge">{{ booking.vehicle.license_plate }}</span>
+                                <br><small>{{ booking.vehicle.model_name|default:"-" }}</small>
+                            {% else %}
+                                <span class="text-muted">&mdash;</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ booking.start_time|date:"d M" }}<br><small>{{ booking.start_time|date:"H:i" }}</small></td>
+                        <td>{{ booking.end_time|date:"d M" }}<br><small>{{ booking.end_time|date:"H:i" }}</small></td>
+                        <td><strong>&#8377;{{ booking.total_cost }}</strong></td>
+                        <td>
+                            <span class="status-badge status-{{ booking.status }}">
+                                {{ booking.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="countdown-timer"
+                                 data-start="{{ booking.start_time|date:'c' }}"
+                                 data-end="{{ booking.end_time|date:'c' }}">
+                            </div>
+                        </td>
+                        <td>
+                            {% if booking.status == 'confirmed' or booking.status == 'pending' or booking.status == 'active' %}
+                            <form action="{% url 'cancel_booking' booking.id %}" method="post" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-danger-sm" onclick="return confirm('Cancel this booking?')">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
+                            </form>
+                            {% else %}
+                                <span class="text-muted">&mdash;</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-parking"></i>
+            <h3>No active bookings</h3>
+            <p>You have no upcoming or confirmed bookings.</p>
+            <a href="{% url 'search' %}" class="btn-primary">Find Parking</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div id="tab-completed" class="tab-content" style="display:none;">
+        <div class="history-notice" style="background:#e6f4ea;color:#1e7e34;">
+            <i class="fas fa-check-circle"></i>
+            Successfully completed parking sessions.
+        </div>
+        {% if completed_bookings %}
+        <div class="table-wrapper">
+            <table class="bookings-table">
+                <thead>
+                    <tr>
+                        <th>#</th><th>Slot</th><th>Location</th>
+                        <th>Vehicle</th><th>Start</th><th>End</th>
+                        <th>Cost</th><th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in completed_bookings %}
+                    <tr class="history-row">
+                        <td><strong>{{ booking.id }}</strong></td>
+                        <td><span class="slot-badge">{{ booking.slot.slot_number }}</span></td>
+                        <td>{{ booking.slot.lot.name }}</td>
+                        <td>
+                            {% if booking.vehicle %}
+                                <span class="slot-badge">{{ booking.vehicle.license_plate }}</span>
+                                <br><small>{{ booking.vehicle.model_name|default:"-" }}</small>
+                            {% else %}
+                                <span class="text-muted">&mdash;</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ booking.start_time|date:"d M Y" }}<br><small>{{ booking.start_time|date:"H:i" }}</small></td>
+                        <td>{{ booking.end_time|date:"d M Y" }}<br><small>{{ booking.end_time|date:"H:i" }}</small></td>
+                        <td><strong>&#8377;{{ booking.total_cost }}</strong></td>
+                        <td><span class="status-badge status-completed">Completed</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-check-circle"></i>
+            <h3>No completed bookings yet</h3>
+            <p>Completed sessions will appear here.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div id="tab-overstay" class="tab-content" style="display:none;">
+        <div class="history-notice" style="background:#fce8e6;color:#c0392b;">
+            <i class="fas fa-exclamation-triangle"></i>
+            These bookings exceeded parking time. Fine has been applied.
+        </div>
+        {% if overstay_bookings %}
+        <div class="table-wrapper">
+            <table class="bookings-table">
+                <thead>
+                    <tr>
+                        <th>#</th><th>Slot</th><th>Location</th>
+                        <th>Vehicle</th><th>Start</th><th>End Time</th>
+                        <th>Parking Cost</th><th>Fine</th><th>Total</th><th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in overstay_bookings %}
+                    <tr data-booking-id="{{ booking.id }}" data-end="{{ booking.end_time|date:'c' }}">
+                        <td><strong>{{ booking.id }}</strong></td>
+                        <td><span class="slot-badge">{{ booking.slot.slot_number }}</span></td>
+                        <td>{{ booking.slot.lot.name }}</td>
+                        <td>
+                            {% if booking.vehicle %}
+                                <span class="slot-badge">{{ booking.vehicle.license_plate }}</span>
+                            {% else %}
+                                <span class="text-muted">&mdash;</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ booking.start_time|date:"d M Y H:i" }}</td>
+                        <td style="color:var(--danger);">{{ booking.end_time|date:"d M Y H:i" }}</td>
+                        <td>&#8377;{{ booking.total_cost }}</td>
+                        <td style="color:var(--danger);font-weight:700;">&#8377;{{ booking.fine_amount }}</td>
+                        <td><strong>&#8377;{{ booking.total_payable }}</strong></td>
+                        <td>
+                            <div class="overstay-actions" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                                <form action="{% url 'extend_booking' booking.id %}" method="post" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="extend_minutes" value="10">
+                                    <button type="submit" class="btn-sm" title="Increase 10 minutes">+10m</button>
+                                </form>
+                                <form action="{% url 'extend_booking' booking.id %}" method="post" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="extend_minutes" value="30">
+                                    <button type="submit" class="btn-sm" title="Increase 30 minutes">+30m</button>
+                                </form>
+                                <form action="{% url 'extend_booking' booking.id %}" method="post" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="extend_minutes" value="60">
+                                    <button type="submit" class="btn-sm" title="Increase 60 minutes">+60m</button>
+                                </form>
+                                <form action="{% url 'cancel_booking' booking.id %}" method="post" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-danger-sm" onclick="return confirm('Cancel this booking?')">Cancel</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-smile"></i>
+            <h3>No overstay fines!</h3>
+            <p>Great - you always park within your booked time.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div id="tab-cancelled" class="tab-content" style="display:none;">
+        <div class="history-notice">
+            <i class="fas fa-info-circle"></i>
+            Cancelled bookings are stored here for records.
+        </div>
+        {% if cancelled_bookings %}
+        <div class="table-wrapper">
+            <table class="bookings-table">
+                <thead>
+                    <tr>
+                        <th>#</th><th>Slot</th><th>Location</th>
+                        <th>Vehicle</th><th>Start</th><th>End</th>
+                        <th>Cost</th><th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in cancelled_bookings %}
+                    <tr class="history-row">
+                        <td><strong>{{ booking.id }}</strong></td>
+                        <td><span class="slot-badge">{{ booking.slot.slot_number }}</span></td>
+                        <td>{{ booking.slot.lot.name }}</td>
+                        <td>
+                            {% if booking.vehicle %}
+                                <span class="slot-badge">{{ booking.vehicle.license_plate }}</span>
+                            {% else %}
+                                <span class="text-muted">&mdash;</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ booking.start_time|date:"d M Y" }}<br><small>{{ booking.start_time|date:"H:i" }}</small></td>
+                        <td>{{ booking.end_time|date:"d M Y" }}<br><small>{{ booking.end_time|date:"H:i" }}</small></td>
+                        <td><strong>&#8377;{{ booking.total_cost }}</strong></td>
+                        <td><span class="status-badge status-cancelled">Cancelled</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-calendar-times"></i>
+            <h3>No cancelled bookings</h3>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<script>
+function showTab(tab, btn) {
+    document.querySelectorAll(".tab-content").forEach(function(content) {
+        content.style.display = "none";
+    });
+    document.querySelectorAll(".tab-btn").forEach(function(button) {
+        button.classList.remove("active");
+    });
+    document.getElementById("tab-" + tab).style.display = "block";
+    btn.classList.add("active");
+}
+
+const supportsNotifications = "Notification" in window;
+
+function updateTimers() {
+    document.querySelectorAll(".countdown-timer").forEach(function(el) {
+        const startStr = el.dataset.start;
+        const endStr = el.dataset.end;
+        const startTime = startStr ? new Date(startStr) : null;
+        const endTime = endStr ? new Date(endStr) : null;
+        const now = new Date();
+
+        const hasValidStart = startTime && !Number.isNaN(startTime.getTime());
+        const hasValidEnd = endTime && !Number.isNaN(endTime.getTime());
+
+        if (hasValidStart && now < startTime) {
+            const diff = startTime - now;
+            const hours = Math.floor(diff / 3600000);
+            const minutes = Math.floor((diff % 3600000) / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+
+            el.innerHTML = `<span style="color:var(--primary);font-weight:700;font-size:0.85rem;">
+                Starts in ${hours}h ${minutes}m ${seconds}s
+            </span>`;
+            return;
+        }
+
+        if (!hasValidEnd) {
+            el.innerHTML = "";
+            return;
+        }
+
+        const diffEnd = endTime - now;
+        if (diffEnd <= 0) {
+            el.innerHTML = '<span style="color:var(--danger);font-weight:700;">Time Over!</span>';
+            if (!el.dataset.reloadQueued) {
+                el.dataset.reloadQueued = "1";
+                setTimeout(function() {
+                    window.location.reload();
+                }, 3000);
+            }
+            return;
+        }
+
+        const hours = Math.floor(diffEnd / 3600000);
+        const minutes = Math.floor((diffEnd % 3600000) / 60000);
+        const seconds = Math.floor((diffEnd % 60000) / 1000);
+        const color = diffEnd < 600000 ? "var(--danger)" :
+                      diffEnd < 1800000 ? "#fbbc04" : "var(--success)";
+
+        el.innerHTML = `<span style="color:${color};font-weight:700;font-size:0.85rem;">
+            ${hours}h ${minutes}m ${seconds}s
+        </span>`;
+
+        if (diffEnd <= 600000 && !el.dataset.tenMinuteWarningSent) {
+            el.dataset.tenMinuteWarningSent = "1";
+            if (supportsNotifications && Notification.permission === "granted") {
+                new Notification("SmartPark - Time Running Out!", {
+                    body: "Your parking ends in 10 minutes!",
+                    icon: "/static/icon-192.png"
+                });
+            }
+        }
+    });
+}
+
+if (supportsNotifications && Notification.permission === "default") {
+    Notification.requestPermission().catch(function() {});
+}
+
+setInterval(updateTimers, 1000);
+updateTimers();
+
+function startOverstayAlerts() {
+    const rows = document.querySelectorAll("#tab-overstay tbody tr[data-end]");
+    rows.forEach(function(row) {
+        const endStr = row.dataset.end;
+        const bookingId = row.dataset.bookingId;
+        if (!endStr) {
+            return;
+        }
+
+        const endTime = new Date(endStr);
+        if (Number.isNaN(endTime.getTime())) {
+            return;
+        }
+
+        function notifyNow() {
+            const now = new Date();
+            if (now <= endTime) {
+                return;
+            }
+
+            const overMinutes = Math.floor((now - endTime) / 60000);
+            const actionCell = row.querySelector("td:last-child");
+            if (!actionCell) {
+                return;
+            }
+
+            let warn = actionCell.querySelector(".overstay-warning-inline");
+            if (!warn) {
+                warn = document.createElement("div");
+                warn.className = "overstay-warning-inline";
+                warn.style = "color:#c0392b;font-weight:700;margin-bottom:8px;";
+                actionCell.prepend(warn);
+            }
+
+            warn.textContent = `Overstaying: ${overMinutes} min - please extend or cancel.`;
+
+            if (supportsNotifications && Notification.permission === "granted") {
+                new Notification("SmartPark - Overstay Alert", {
+                    body: `Booking #${bookingId} is overstaying by ${overMinutes} min.`,
+                    icon: "/static/icon-192.png"
+                });
+            }
+        }
+
+        notifyNow();
+        setInterval(notifyNow, 10 * 60 * 1000);
+    });
+}
+
+startOverstayAlerts();
+</script>
+{% endblock %}

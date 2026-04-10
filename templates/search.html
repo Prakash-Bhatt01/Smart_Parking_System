@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block title %}Find Parking - SmartPark{% endblock %}
+
+{% block content %}
+
+<div class="search-hero">
+    <div class="container">
+        <h1><i class="fas fa-search-location"></i> Find Parking Near You</h1>
+        <p>Search by area, filter by vehicle type - book in seconds.</p>
+
+        <form method="get" class="search-hero-form">
+            <div class="search-hero-bar">
+                <div class="shi-wrap">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <input type="text" name="city" value="{{ request.GET.city }}" placeholder="Enter city, area or landmark...">
+                    {% if request.GET.city %}
+                    <a href="{% url 'search' %}" class="clear-search">
+                        <i class="fas fa-times"></i>
+                    </a>
+                    {% endif %}
+                </div>
+                <button type="submit" class="search-hero-btn">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+
+            <div class="vehicle-filter-pills">
+                <span class="filter-label">Filter by vehicle:</span>
+                <a href="{% url 'search' %}?city={{ request.GET.city|default:''|urlencode }}&vehicle_type="
+                   class="vehicle-pill {% if not request.GET.vehicle_type %}pill-active{% endif %}">
+                    <i class="fas fa-car-side"></i> All
+                </a>
+                <a href="{% url 'search' %}?city={{ request.GET.city|default:''|urlencode }}&vehicle_type=car"
+                   class="vehicle-pill {% if request.GET.vehicle_type == 'car' %}pill-active{% endif %}">
+                    <i class="fas fa-car"></i> Car
+                </a>
+                <a href="{% url 'search' %}?city={{ request.GET.city|default:''|urlencode }}&vehicle_type=bike"
+                   class="vehicle-pill {% if request.GET.vehicle_type == 'bike' %}pill-active{% endif %}">
+                    <i class="fas fa-motorcycle"></i> Bike
+                </a>
+                <a href="{% url 'search' %}?city={{ request.GET.city|default:''|urlencode }}&vehicle_type=ev"
+                   class="vehicle-pill {% if request.GET.vehicle_type == 'ev' %}pill-active{% endif %}">
+                    <i class="fas fa-bolt"></i> EV
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="container search-page">
+
+    <div class="results-bar">
+        <div class="results-count">
+            <i class="fas fa-parking"></i>
+            <strong>{{ lots.count }}</strong> parking lot{{ lots.count|pluralize }} found
+            {% if request.GET.city %}
+                for <em>"{{ request.GET.city }}"</em>
+            {% endif %}
+        </div>
+        {% if request.GET.city or request.GET.vehicle_type %}
+        <a href="{% url 'search' %}" class="clear-all-btn">
+            <i class="fas fa-times"></i> Clear all filters
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="lots-grid">
+        {% for lot in lots %}
+        <div class="lot-card">
+
+            {% if lot.image %}
+                <img src="{{ lot.image.url }}" alt="{{ lot.name }}" class="lot-img">
+            {% else %}
+                <div class="lot-img-placeholder">
+                    <i class="fas fa-{% if lot.vehicle_type == 'bike' %}motorcycle{% elif lot.vehicle_type == 'ev' %}bolt{% else %}parking{% endif %}"></i>
+                </div>
+            {% endif %}
+
+            <div class="avail-ribbon {% if lot.available_slots > 0 %}ribbon-green{% else %}ribbon-red{% endif %}">
+                {% if lot.available_slots > 0 %}
+                    <i class="fas fa-check-circle"></i> {{ lot.available_slots }} slots free
+                {% else %}
+                    <i class="fas fa-times-circle"></i> Full
+                {% endif %}
+            </div>
+
+            <div class="lot-body">
+                <div class="lot-type-badge">{{ lot.get_vehicle_type_display }}</div>
+                <h3 class="lot-name">{{ lot.name }}</h3>
+                <p class="lot-address">
+                    <i class="fas fa-map-marker-alt"></i> {{ lot.address }}, {{ lot.city }}
+                </p>
+
+                <div class="lot-stats-row">
+                    <div class="lot-stat">
+                        <i class="fas fa-car"></i>
+                        <span>{{ lot.total_slots }} total</span>
+                    </div>
+                    <div class="lot-stat">
+                        <i class="fas fa-clock"></i>
+                        <span>Open 24/7</span>
+                    </div>
+                </div>
+
+                <div class="lot-footer">
+                    <div class="lot-price-wrap">
+                        <span class="lot-price">&#8377;{{ lot.price_per_hour }}</span>
+                        <span class="per-hour">/hour</span>
+                    </div>
+                    <a href="{% url 'lot_detail' lot.id %}" class="btn-primary">
+                        View &amp; Book <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state" style="grid-column:1/-1;">
+            <i class="fas fa-parking"></i>
+            <h3>No parking lots found</h3>
+            <p>Try a different city name or clear the filters.</p>
+            <a href="{% url 'search' %}" class="btn-primary">
+                <i class="fas fa-redo"></i> Clear Filters
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

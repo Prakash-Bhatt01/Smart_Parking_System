@@ -1,0 +1,69 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a73e8">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="SmartPark">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <title>{% block title %}SmartPark{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="nav-brand">
+        <i class="fas fa-parking"></i> SmartPark
+    </a>
+    <ul class="nav-links">
+        <li><a href="{% url 'home' %}">Home</a></li>
+        <li><a href="{% url 'search' %}">Find Parking</a></li>
+        {% if user.is_authenticated %}
+            <li><a href="{% url 'my_bookings' %}">My Bookings</a></li>
+            <li><a href="{% url 'logout' %}" class="btn-outline">Logout</a></li>
+        {% else %}
+            <li><a href="{% url 'login' %}">Login</a></li>
+            <li><a href="{% url 'register' %}" class="btn-primary">Register</a></li>
+        {% endif %}
+    </ul>
+</nav>
+
+{% if messages %}
+<div class="messages-container">
+    {% for msg in messages %}
+    <div class="alert alert-{{ msg.tags }}">
+        <span>{{ msg }}</span>
+        <button type="button" class="alert-close" onclick="this.parentElement.remove()" aria-label="Close">
+            &times;
+        </button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<main>
+    {% block content %}{% endblock %}
+</main>
+
+<footer>
+    <div class="footer-inner">
+        <p><i class="fas fa-parking"></i> <strong>SmartPark</strong></p>
+        <p style="margin-top:0.5rem;opacity:0.7;font-size:0.9rem;font-style:italic;">
+            Park Smart. Save Time. Move Better.
+        </p>
+        <p style="margin-top:0.4rem;opacity:0.45;font-size:0.78rem;">
+            &copy; 2026 SmartPark &middot; All rights reserved
+        </p>
+    </div>
+</footer>
+
+<script src="{% static 'js/main.js' %}"></script>
+</body>
+</html>

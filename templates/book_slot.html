@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% block title %}Book Slot {{ slot.slot_number }} - SmartPark{% endblock %}
+
+{% block content %}
+
+<div class="page-banner">
+    <div class="container">
+        <a href="{% url 'lot_detail' slot.lot.id %}" class="back-link">
+            <i class="fas fa-arrow-left"></i> Back to Slots
+        </a>
+        <h1>Book Parking Slot</h1>
+    </div>
+</div>
+
+<div class="container booking-page">
+    <div class="booking-grid">
+
+        <div class="info-panel">
+            <h3><i class="fas fa-info-circle"></i> Slot Details</h3>
+            <div class="info-table">
+                <div class="info-row">
+                    <span>Slot Number</span>
+                    <strong>{{ slot.slot_number }}</strong>
+                </div>
+                <div class="info-row">
+                    <span>Parking Lot</span>
+                    <strong>{{ slot.lot.name }}</strong>
+                </div>
+                <div class="info-row">
+                    <span>Address</span>
+                    <strong>{{ slot.lot.address }}</strong>
+                </div>
+                <div class="info-row">
+                    <span>Vehicle Type</span>
+                    <strong>{{ slot.get_vehicle_type_display }}</strong>
+                </div>
+                <div class="info-row highlight-row">
+                    <span>Price</span>
+                    <strong>&#8377;{{ slot.lot.price_per_hour }} / hour</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-panel">
+            <h3><i class="fas fa-calendar-alt"></i> Booking Details</h3>
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-error" style="position:relative;top:0;right:0;max-width:100%;margin-bottom:1rem;">
+                {{ form.non_field_errors.0 }}
+            </div>
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="form-section-title">
+                    <i class="fas fa-clock"></i> Parking Time
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.start_time.id_for_label }}">Start Time</label>
+                    {{ form.start_time }}
+                    {% if form.start_time.errors %}
+                        <span class="field-error">{{ form.start_time.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.end_time.id_for_label }}">End Time</label>
+                    {{ form.end_time }}
+                    {% if form.end_time.errors %}
+                        <span class="field-error">{{ form.end_time.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="cost-preview" id="cost-preview">
+                    <i class="fas fa-rupee-sign"></i>
+                    Select times to see estimated cost
+                </div>
+
+                <div class="form-section-title" style="margin-top:1.2rem;">
+                    <i class="fas fa-car"></i> Your Vehicle Details
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.license_plate.id_for_label }}">License Plate Number</label>
+                    {{ form.license_plate }}
+                    {% if form.license_plate.errors %}
+                        <span class="field-error">{{ form.license_plate.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.vehicle_type_choice.id_for_label }}">Vehicle Type</label>
+                    {{ form.vehicle_type_choice }}
+                    {% if form.vehicle_type_choice.errors %}
+                        <span class="field-error">{{ form.vehicle_type_choice.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.model_name.id_for_label }}">Vehicle Model</label>
+                    {{ form.model_name }}
+                    {% if form.model_name.errors %}
+                        <span class="field-error">{{ form.model_name.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <p class="vehicle-note">
+                    <i class="fas fa-info-circle"></i>
+                    Vehicle details are optional, but if you enter a license plate then choose the matching vehicle type too.
+                </p>
+
+                <button type="submit" class="btn-primary btn-large btn-block">
+                    <i class="fas fa-check-circle"></i> Confirm Booking
+                </button>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const pricePerHour = Number("{{ slot.lot.price_per_hour }}");
+    const startInput = document.getElementById("id_start_time");
+    const endInput = document.getElementById("id_end_time");
+    const preview = document.getElementById("cost-preview");
+
+    function updateCost() {
+        if (!startInput || !endInput || !preview) {
+            return;
+        }
+
+        const start = startInput.value ? new Date(startInput.value) : null;
+        const end = endInput.value ? new Date(endInput.value) : null;
+
+        if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+            preview.innerHTML = '<i class="fas fa-rupee-sign"></i> Select times to see estimated cost';
+            preview.classList.remove("cost-ready");
+            return;
+        }
+
+        if (end <= start) {
+            preview.innerHTML = '<i class="fas fa-exclamation-circle"></i> End time must be after start time';
+            preview.classList.remove("cost-ready");
+            return;
+        }
+
+        const hours = (end - start) / 3600000;
+        const cost = (hours * pricePerHour).toFixed(2);
+
+        preview.innerHTML =
+            `<i class="fas fa-rupee-sign"></i> Estimated Cost: <strong>&#8377;${cost}</strong> for <strong>${hours.toFixed(1)} hrs</strong>`;
+        preview.classList.add("cost-ready");
+    }
+
+    if (startInput && endInput) {
+        startInput.addEventListener("change", updateCost);
+        endInput.addEventListener("change", updateCost);
+        updateCost();
+    }
+</script>
+
+{% endblock %}

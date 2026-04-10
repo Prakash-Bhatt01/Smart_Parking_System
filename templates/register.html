@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% block title %}Register - SmartPark{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-wrapper">
+
+        <div class="auth-left">
+            <div class="auth-left-content">
+                <div class="auth-logo">
+                    <i class="fas fa-parking"></i> SmartPark
+                </div>
+                <h2>Join thousands of smart parkers today!</h2>
+                <div class="auth-features">
+                    <div class="auth-feature">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Free to register</span>
+                    </div>
+                    <div class="auth-feature">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Secure &amp; private</span>
+                    </div>
+                    <div class="auth-feature">
+                        <i class="fas fa-history"></i>
+                        <span>Track all your bookings</span>
+                    </div>
+                    <div class="auth-feature">
+                        <i class="fas fa-car"></i>
+                        <span>Save your vehicle details</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="auth-right">
+            <div class="auth-card">
+                <div class="auth-icon-wrap">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+                <h2>Create Account</h2>
+                <p class="auth-subtitle">Join SmartPark - it's free!</p>
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-error" style="position:relative;top:0;right:0;max-width:100%;margin-bottom:1rem;">
+                    {{ form.non_field_errors.0 }}
+                </div>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label>First Name</label>
+                            <input type="text" name="first_name" required placeholder="First name" value="{{ form.first_name.value|default_if_none:'' }}">
+                            {% if form.first_name.errors %}
+                                <span class="field-error">{{ form.first_name.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="form-group">
+                            <label>Last Name</label>
+                            <input type="text" name="last_name" required placeholder="Last name" value="{{ form.last_name.value|default_if_none:'' }}">
+                            {% if form.last_name.errors %}
+                                <span class="field-error">{{ form.last_name.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Username</label>
+                        <input type="text" name="username" required placeholder="Choose a username" value="{{ form.username.value|default_if_none:'' }}">
+                        {% if form.username.errors %}
+                            <span class="field-error">{{ form.username.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-envelope"></i> Email Address</label>
+                        <input type="email" name="email" required placeholder="your@email.com" value="{{ form.email.value|default_if_none:'' }}">
+                        {% if form.email.errors %}
+                            <span class="field-error">{{ form.email.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-lock"></i> Password</label>
+                        <div class="input-icon-wrap">
+                            <input type="password" name="password1" id="regPassword" required placeholder="Create a strong password" oninput="checkStrength(this.value)">
+                            <button type="button" class="toggle-password" onclick="togglePassword('regPassword', this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="password-strength">
+                            <div class="strength-bar" id="strength-bar"></div>
+                        </div>
+                        <small class="password-hint" id="strength-text">
+                            Use 8+ characters with letters, numbers and symbols
+                        </small>
+                        {% if form.password1.errors %}
+                            <span class="field-error">{{ form.password1.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-lock"></i> Confirm Password</label>
+                        <div class="input-icon-wrap">
+                            <input type="password" name="password2" id="regPassword2" required placeholder="Repeat your password">
+                            <button type="button" class="toggle-password" onclick="togglePassword('regPassword2', this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        {% if form.password2.errors %}
+                            <span class="field-error">{{ form.password2.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" class="btn-primary btn-block btn-large">
+                        <i class="fas fa-user-plus"></i> Create Account
+                    </button>
+                </form>
+
+                <div class="auth-divider"><span>Already have an account?</span></div>
+
+                <a href="{% url 'login' %}" class="btn-outline btn-block">
+                    <i class="fas fa-sign-in-alt"></i> Login Instead
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+function togglePassword(inputId, btn) {
+    const input = document.getElementById(inputId);
+    const icon = btn.querySelector("i");
+    if (input.type === "password") {
+        input.type = "text";
+        icon.classList.replace("fa-eye", "fa-eye-slash");
+    } else {
+        input.type = "password";
+        icon.classList.replace("fa-eye-slash", "fa-eye");
+    }
+}
+
+function checkStrength(val) {
+    const bar = document.getElementById("strength-bar");
+    const text = document.getElementById("strength-text");
+    let score = 0;
+
+    if (val.length >= 8) score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+
+    const levels = [
+        { label: "Too short", color: "#ea4335", width: "15%" },
+        { label: "Weak", color: "#ea4335", width: "25%" },
+        { label: "Fair", color: "#fbbc04", width: "50%" },
+        { label: "Good", color: "#34a853", width: "75%" },
+        { label: "Strong", color: "#1a73e8", width: "100%" }
+    ];
+
+    const level = levels[Math.min(score, 4)];
+    bar.style.width = level.width;
+    bar.style.background = level.color;
+    text.textContent = level.label;
+    text.style.color = level.color;
+}
+</script>
+{% endblock %}

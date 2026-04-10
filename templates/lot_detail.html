@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% block title %}{{ lot.name }} - SmartPark{% endblock %}
+
+{% block content %}
+
+<div class="page-banner">
+    <div class="container">
+        <a href="{% url 'search' %}" class="back-link">
+            <i class="fas fa-arrow-left"></i> Back to Search
+        </a>
+        <h1>{{ lot.name }}</h1>
+        <p><i class="fas fa-map-marker-alt"></i> {{ lot.address }}, {{ lot.city }}</p>
+        <div class="lot-meta-pills">
+            <span class="meta-pill">
+                <i class="fas fa-rupee-sign"></i> &#8377;{{ lot.price_per_hour }} per hour
+            </span>
+            <span class="meta-pill {% if available_count > 0 %}pill-green{% else %}pill-red{% endif %}">
+                <i class="fas fa-circle"></i>
+                {{ available_count }} / {{ lot.total_slots }} Available
+            </span>
+        </div>
+    </div>
+</div>
+
+<div class="container slots-page">
+
+    <div class="slot-legend">
+        <div class="legend-item">
+            <div class="legend-box legend-available"></div>
+            <span>Available - click to book</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-box legend-occupied"></div>
+            <span>Booked / Occupied</span>
+        </div>
+    </div>
+
+    <div class="slot-stats-bar">
+        <div class="slot-stat-item stat-available">
+            <i class="fas fa-check-circle"></i>
+            <span><strong>{{ available_count }}</strong> Available</span>
+        </div>
+        <div class="slot-stat-item stat-booked">
+            <i class="fas fa-times-circle"></i>
+            <span><strong>{{ booked_count }}</strong> Booked</span>
+        </div>
+        <div class="slot-stat-item stat-total">
+            <i class="fas fa-parking"></i>
+            <span><strong>{{ lot.total_slots }}</strong> Total</span>
+        </div>
+    </div>
+
+    <div class="vehicle-section">
+        <div class="vehicle-section-header car-header">
+            <div class="vehicle-icon"><i class="fas fa-car"></i></div>
+            <div>
+                <h2>Car Parking</h2>
+                <span class="slot-count">{{ car_slots.count }} slots</span>
+            </div>
+        </div>
+        {% if car_slots %}
+        <div class="slots-grid">
+            {% for slot in car_slots %}
+            <div class="slot-card {% if slot.is_available %}slot-available{% else %}slot-occupied{% endif %}">
+                <span class="slot-number">{{ slot.slot_number }}</span>
+                {% if slot.is_available %}
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'book_slot' slot.id %}" class="slot-book-btn">Book</a>
+                    {% else %}
+                        <a href="{% url 'login' %}?next={% url 'book_slot' slot.id %}" class="slot-book-btn btn-muted">Login</a>
+                    {% endif %}
+                {% else %}
+                    <span class="slot-taken-label">Booked</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-slots-notice">No car slots added yet.</div>
+        {% endif %}
+    </div>
+
+    <div class="vehicle-section">
+        <div class="vehicle-section-header bike-header">
+            <div class="vehicle-icon"><i class="fas fa-motorcycle"></i></div>
+            <div>
+                <h2>Bike / Scooter Parking</h2>
+                <span class="slot-count">{{ bike_slots.count }} slots</span>
+            </div>
+        </div>
+        {% if bike_slots %}
+        <div class="slots-grid">
+            {% for slot in bike_slots %}
+            <div class="slot-card {% if slot.is_available %}slot-available{% else %}slot-occupied{% endif %}">
+                <span class="slot-number">{{ slot.slot_number }}</span>
+                {% if slot.is_available %}
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'book_slot' slot.id %}" class="slot-book-btn">Book</a>
+                    {% else %}
+                        <a href="{% url 'login' %}?next={% url 'book_slot' slot.id %}" class="slot-book-btn btn-muted">Login</a>
+                    {% endif %}
+                {% else %}
+                    <span class="slot-taken-label">Booked</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-slots-notice">No bike slots added yet.</div>
+        {% endif %}
+    </div>
+
+    <div class="vehicle-section">
+        <div class="vehicle-section-header ev-header">
+            <div class="vehicle-icon"><i class="fas fa-bolt"></i></div>
+            <div>
+                <h2>Electric Vehicle Parking</h2>
+                <span class="slot-count">{{ ev_slots.count }} slots</span>
+            </div>
+        </div>
+        {% if ev_slots %}
+        <div class="slots-grid">
+            {% for slot in ev_slots %}
+            <div class="slot-card {% if slot.is_available %}slot-available{% else %}slot-occupied{% endif %}">
+                <span class="slot-number">{{ slot.slot_number }}</span>
+                {% if slot.is_available %}
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'book_slot' slot.id %}" class="slot-book-btn">Book</a>
+                    {% else %}
+                        <a href="{% url 'login' %}?next={% url 'book_slot' slot.id %}" class="slot-book-btn btn-muted">Login</a>
+                    {% endif %}
+                {% else %}
+                    <span class="slot-taken-label">Booked</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-slots-notice">No EV slots added yet.</div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
