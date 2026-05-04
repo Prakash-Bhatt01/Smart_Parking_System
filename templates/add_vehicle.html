@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Add Vehicle - SmartPark{% endblock %}
+
+{% block content %}
+<div class="container auth-page">
+    <div class="auth-card">
+        <div class="auth-icon-wrap"><i class="fas fa-car"></i></div>
+        <h2>Add Your Vehicle</h2>
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-error" style="position:relative;top:0;right:0;max-width:100%;margin-bottom:1rem;">
+            {{ form.non_field_errors.0 }}
+        </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                    <span class="field-error">{{ field.errors.0 }}</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <button type="submit" class="btn-primary btn-block btn-large">
+                <i class="fas fa-plus"></i> Add Vehicle
+            </button>
+        </form>
+
+        <p class="auth-switch">
+            <a href="{% url 'my_bookings' %}">&larr; Back to Bookings</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
