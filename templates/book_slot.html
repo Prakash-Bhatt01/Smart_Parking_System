@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block title %}Book Slot {{ slot.slot_number }} — SmartPark{% endblock %}
+
+{% block content %}
+
+<div class="page-banner">
+    <div class="container">
+        <a href="{% url 'lot_detail' slot.lot.id %}" class="back-link">
+            <i class="fas fa-arrow-left"></i> Back to Slots
+        </a>
+        <h1>Book Parking Slot</h1>
+    </div>
+</div>
+
+<div class="container booking-page">
+    <div class="booking-grid">
+
+        <div class="info-panel">
+            <h3><i class="fas fa-info-circle"></i> Slot Details</h3>
+            <div class="info-table">
+                <div class="info-row">
+                    <span>Slot Number</span>
+                    <strong>{{ slot.slot_number }}</strong>
+                </div>
+                <div class="info-row">
+                    <span>Parking Lot</span>
+                    <strong>{{ slot.lot.name }}</strong>
+                </div>
+                <div class="info-row">
+                    <span>Address</span>
+                    <strong>{{ slot.lot.address }}</strong>
+                </div>
+                <div class="info-row">
+                    <span>Vehicle Type</span>
+                    <strong>{{ slot.lot.get_vehicle_type_display }}</strong>
+                </div>
+                <div class="info-row highlight-row">
+                    <span>Price</span>
+                    <strong>₹{{ slot.lot.price_per_hour }} / hour</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-panel">
+            <h3><i class="fas fa-calendar-alt"></i> Booking Details</h3>
+            <form method="POST">
+                {% csrf_token %}
+
+                <div class="form-section-title">
+                    <i class="fas fa-clock"></i> Parking Time
+                </div>
+
+                <div class="form-group">
+                    <label>Start Time</label>
+                    {{ form.start_time }}
+                </div>
+
+                <div class="form-group">
+                    <label>End Time</label>
+                    {{ form.end_time }}
+                </div>
+
+                <div class="cost-preview" id="cost-preview">
+                    <i class="fas fa-rupee-sign"></i>
+                    Select times to see estimated cost
+                </div>
+
+                <div class="form-section-title" style="margin-top:1.2rem;">
+                    <i class="fas fa-car"></i> Your Vehicle Details
+                </div>
+
+                <div class="form-group">
+                    <label>License Plate Number</label>
+                    {{ form.license_plate }}
+                </div>
+
+                <div class="form-group">
+                    <label>Vehicle Type</label>
+                    {{ form.vehicle_type_choice }}
+                </div>
+
+                <div class="form-group">
+                    <label>Vehicle Model</label>
+                    {{ form.model_name }}
+                </div>
+
+                <p class="vehicle-note">
+                    <i class="fas fa-info-circle"></i>
+                    Vehicle details are optional but help identify your vehicle at the parking lot.
+                </p>
+
+                <button type="submit" class="btn-primary btn-large btn-block">
+                    <i class="fas fa-check-circle"></i> Confirm Booking
+                </button>
+
+            </form>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const pricePerHour = {{ slot.lot.price_per_hour }};
+    const startInput = document.getElementById('id_start_time');
+    const endInput = document.getElementById('id_end_time');
+    const preview = document.getElementById('cost-preview');
+
+    function updateCost() {
+        const start = new Date(startInput.value);
+        const end = new Date(endInput.value);
+        if (start && end && end > start) {
+            const hours = (end - start) / 3600000;
+            const cost = (hours * pricePerHour).toFixed(2);
+            preview.innerHTML = `<i class="fas fa-rupee-sign"></i> Estimated Cost: <strong>₹${cost}</strong> for <strong>${hours.toFixed(1)} hrs</strong>`;
+            preview.classList.add('cost-ready');
+        }
+    }
+    startInput.addEventListener('change', updateCost);
+    endInput.addEventListener('change', updateCost);
+</script>
+
+{% endblock %}

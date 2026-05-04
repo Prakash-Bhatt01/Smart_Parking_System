@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% block title %}My Profile — SmartPark{% endblock %}
+
+{% block content %}
+
+<div class="page-banner">
+    <div class="container">
+        <h1><i class="fas fa-user-circle"></i> My Profile</h1>
+    </div>
+</div>
+
+<div class="container profile-page">
+    
+    <!-- User Information Card -->
+    <div class="profile-card">
+        <div class="profile-header">
+            <div class="profile-avatar">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <div class="profile-info">
+                <h2>{{ user.get_full_name|default:user.username }}</h2>
+                <p class="profile-email">
+                    <i class="fas fa-envelope"></i> {{ user.email|default:"No email provided" }}
+                </p>
+                <p class="profile-username">
+                    <i class="fas fa-at"></i> {{ user.username }}
+                </p>
+                <p class="profile-joined">
+                    <i class="fas fa-calendar-alt"></i> Member since {{ user.date_joined|date:"F Y" }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Section -->
+    <div class="stats-section">
+        <h3><i class="fas fa-chart-bar"></i> Booking Statistics</h3>
+        <div class="stats-grid">
+            <div class="stat-card stat-total">
+                <div class="stat-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">{{ total_bookings }}</div>
+                    <div class="stat-label">Total Lifetime Bookings</div>
+                </div>
+            </div>
+            
+            <div class="stat-card stat-active">
+                <div class="stat-icon">
+                    <i class="fas fa-parking"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">{{ active_bookings }}</div>
+                    <div class="stat-label">Active Bookings</div>
+                </div>
+            </div>
+            
+            <div class="stat-card stat-completed">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">{{ completed_bookings }}</div>
+                    <div class="stat-label">Completed Bookings</div>
+                </div>
+            </div>
+            
+            <div class="stat-card stat-cancelled">
+                <div class="stat-icon">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">{{ cancelled_bookings }}</div>
+                    <div class="stat-label">Cancelled Bookings</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Bookings Section -->
+    {% if recent_bookings %}
+    <div class="recent-bookings-section">
+        <h3><i class="fas fa-history"></i> Recent Bookings</h3>
+        <div class="recent-bookings-list">
+            {% for booking in recent_bookings %}
+            <div class="recent-booking-item">
+                <div class="booking-icon">
+                    <i class="fas fa-parking"></i>
+                </div>
+                <div class="booking-details">
+                    <div class="booking-title">
+                        <strong>Slot {{ booking.slot.slot_number }}</strong> at {{ booking.slot.lot.name }}
+                    </div>
+                    <div class="booking-meta">
+                        <span class="booking-date">
+                            <i class="fas fa-calendar"></i> {{ booking.start_time|date:"M d, Y" }}
+                        </span>
+                        <span class="booking-time">
+                            <i class="fas fa-clock"></i> {{ booking.start_time|date:"g:i A" }} - {{ booking.end_time|date:"g:i A" }}
+                        </span>
+                        <span class="booking-cost">
+                            <i class="fas fa-rupee-sign"></i> {{ booking.total_cost }}
+                        </span>
+                    </div>
+                </div>
+                <div class="booking-status">
+                    <span class="status-badge status-{{ booking.status }}">
+                        {{ booking.get_status_display }}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="profile-actions">
+            <a href="{% url 'my_bookings' %}" class="btn-primary">
+                <i class="fas fa-list"></i> View All Bookings
+            </a>
+            <a href="{% url 'search' %}" class="btn-outline">
+                <i class="fas fa-search"></i> Find Parking
+            </a>
+        </div>
+    </div>
+    {% else %}
+    <div class="no-bookings-section">
+        <div class="empty-state">
+            <i class="fas fa-calendar-plus"></i>
+            <h3>No bookings yet</h3>
+            <p>Start by finding and booking your first parking spot!</p>
+            <a href="{% url 'search' %}" class="btn-primary">
+                <i class="fas fa-search"></i> Find Parking
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}

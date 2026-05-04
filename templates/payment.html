@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% block title %}Complete Payment — SmartPark{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-wrapper">
+
+        <!-- Left Panel: Branding -->
+        <div class="auth-left">
+            <div class="auth-left-content">
+                <div class="auth-logo">
+                    <i class="fas fa-parking"></i> SmartPark
+                </div>
+                <h2>Secure Payment<br>Quick Checkout<br>Park with Confidence</h2>
+                <div class="auth-features">
+                    <div class="auth-feature">
+                        <i class="fas fa-lock"></i>
+                        <span>Secure payment processing</span>
+                    </div>
+                    <div class="auth-feature">
+                        <i class="fas fa-credit-card"></i>
+                        <span>All major cards accepted</span>
+                    </div>
+                    <div class="auth-feature">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Instant booking confirmation</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Payment Form -->
+        <div class="auth-right">
+            <div class="auth-card">
+                <div class="auth-icon-wrap">
+                    <i class="fas fa-credit-card"></i>
+                </div>
+                <h2>Complete Payment</h2>
+                <p class="auth-subtitle">Booking Details</p>
+
+                <!-- Booking Summary -->
+                <div class="booking-summary">
+                    <div class="summary-row">
+                        <span>Slot:</span>
+                        <strong>{{ booking.slot.slot_number }}</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Location:</span>
+                        <strong>{{ booking.slot.lot.name }}</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Duration:</span>
+                        <strong>{{ duration_hours }} hours</strong>
+                    </div>
+                    <div class="summary-row highlight">
+                        <span>Total:</span>
+                        <strong>₹{{ booking.total_cost }}</strong>
+                    </div>
+                </div>
+
+                <!-- Payment Form -->
+                <form method="POST" action="{% url 'process_payment' booking.id %}">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-credit-card"></i> Card Number</label>
+                        <input type="text" name="card_number" required
+                               pattern="[0-9]{16}"
+                               placeholder="1234567890123456"
+                               maxlength="16"
+                               title="Please enter a valid 16-digit card number">
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Cardholder Name</label>
+                        <input type="text" name="card_name" required
+                               placeholder="John Doe"
+                               title="Please enter the cardholder name">
+                    </div>
+
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label><i class="fas fa-calendar"></i> Expiry</label>
+                            <input type="text" name="expiry" required
+                                   pattern="(0[1-9]|1[0-2])\/[0-9]{2}"
+                                   placeholder="MM/YY"
+                                   maxlength="5"
+                                   title="Please enter expiry in MM/YY format">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-lock"></i> CVV</label>
+                            <input type="text" name="cvv" required
+                                   pattern="[0-9]{3,4}"
+                                   placeholder="123"
+                                   maxlength="4"
+                                   title="Please enter a valid 3 or 4 digit CVV">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary btn-block btn-large">
+                        <i class="fas fa-check-circle"></i> Complete Payment
+                    </button>
+                </form>
+
+                <p class="payment-note">
+                    <i class="fas fa-info-circle"></i>
+                    This is a demo payment form. No real charges will be made.
+                </p>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

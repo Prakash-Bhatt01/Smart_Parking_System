@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Booking Confirmed — SmartPark{% endblock %}
+
+{% block content %}
+<div class="success-page">
+    <div class="container">
+        <div class="success-card">
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h1>Booking Confirmed!</h1>
+            <p class="success-subtitle">Your parking slot has been reserved</p>
+
+            <div class="booking-details-card">
+                <h3><i class="fas fa-info-circle"></i> Booking Details</h3>
+                <div class="detail-row">
+                    <span>Booking ID:</span>
+                    <strong>#{{ booking.id }}</strong>
+                </div>
+                <div class="detail-row">
+                    <span>Slot Number:</span>
+                    <strong>{{ booking.slot.slot_number }}</strong>
+                </div>
+                <div class="detail-row">
+                    <span>Parking Lot:</span>
+                    <strong>{{ booking.slot.lot.name }}</strong>
+                </div>
+                <div class="detail-row">
+                    <span>Address:</span>
+                    <strong>{{ booking.slot.lot.address }}</strong>
+                </div>
+                <div class="detail-row">
+                    <span>Start Time:</span>
+                    <strong>{{ booking.start_time|date:"M d, Y g:i A" }}</strong>
+                </div>
+                <div class="detail-row">
+                    <span>End Time:</span>
+                    <strong>{{ booking.end_time|date:"M d, Y g:i A" }}</strong>
+                </div>
+                <div class="detail-row">
+                    <span>Duration:</span>
+                    <strong>{{ duration_hours }} hours</strong>
+                </div>
+                <div class="detail-row highlight">
+                    <span>Total Paid:</span>
+                    <strong>₹{{ booking.total_cost }}</strong>
+                </div>
+            </div>
+
+            <div class="success-actions">
+                <a href="{% url 'my_bookings' %}" class="btn-primary btn-large">
+                    <i class="fas fa-list"></i> View My Bookings
+                </a>
+                <a href="{% url 'home' %}" class="btn-outline btn-large">
+                    <i class="fas fa-home"></i> Back to Home
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
