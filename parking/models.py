@@ -35,10 +35,22 @@ class ParkingSlot(models.Model):
         ('bike', 'Bike / Scooter'),
         ('ev', 'Electric Vehicle'),
     ]
+    OCCUPANCY_STATUS_CHOICES = [
+        ('empty', 'Empty'),
+        ('occupied', 'Occupied'),
+        ('unknown', 'Unknown'),
+    ]
     lot = models.ForeignKey(ParkingLot, on_delete=models.CASCADE, related_name='slots')
     slot_number = models.CharField(max_length=10)
     vehicle_type = models.CharField(max_length=10, choices=VEHICLE_TYPES, default='car')
     is_available = models.BooleanField(default=True)
+    controller_id = models.CharField(max_length=50, blank=True, default='')
+    sensor_id = models.CharField(max_length=50, blank=True, null=True, unique=True)
+    occupancy_status = models.CharField(max_length=10, choices=OCCUPANCY_STATUS_CHOICES, default='empty')
+    last_sensor_update = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['lot_id', 'slot_number']
 
     def __str__(self):
         return f"Slot {self.slot_number} ({self.vehicle_type}) - {self.lot.name}"
