@@ -48,6 +48,8 @@ class ParkingSlot(models.Model):
     sensor_id = models.CharField(max_length=50, blank=True, null=True, unique=True)
     occupancy_status = models.CharField(max_length=10, choices=OCCUPANCY_STATUS_CHOICES, default='empty')
     last_sensor_update = models.DateTimeField(blank=True, null=True)
+    is_hardware_slot = models.BooleanField(default=False)
+    hardware_slot_id = models.CharField(max_length=10, blank=True, default='')
 
     class Meta:
         ordering = ['lot_id', 'slot_number']
