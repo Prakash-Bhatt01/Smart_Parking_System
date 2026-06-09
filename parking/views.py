@@ -4,11 +4,13 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.core.files.base import ContentFile
+from django.conf import settings
 from .models import ParkingLot, ParkingSlot, Booking, Vehicle
 from .forms import RegisterForm, BookingForm, VehicleForm
 from datetime import timedelta
 import qrcode
 from io import BytesIO
+import os
 
 
 def home(request):
@@ -73,6 +75,14 @@ def book_slot(request, slot_id):
             booking.save()
             slot.is_available = False
             slot.save()
+            
+            # Send hardware signal if this is a hardware slot
+            if slot.is_hardware_slot:
+                signal_file_path = os.path.join(settings.BASE_DIR, 'hardware_signals.txt')
+                with open(signal_file_path, 'a') as f:
+                    f.write(f'BOOK:{slot.hardware_slot_id}\n')
+                print(f'Hardware signal sent: BOOK:{slot.hardware_slot_id}')
+            
             messages.success(request, f'Slot {slot.slot_number} booked successfully!')
             return redirect('payment_page', booking_id=booking.id)
     return render(request, 'book_slot.html', {'slot': slot, 'form': form})
@@ -221,6 +231,14 @@ def cancel_booking(request, booking_id):
         booking.save()
         booking.slot.is_available = True
         booking.slot.save()
+        
+        # Send hardware signal if this is a hardware slot
+        if booking.slot.is_hardware_slot:
+            signal_file_path = os.path.join(settings.BASE_DIR, 'hardware_signals.txt')
+            with open(signal_file_path, 'a') as f:
+                f.write(f'CANCEL:{booking.slot.hardware_slot_id}\n')
+            print(f'Hardware signal sent: CANCEL:{booking.slot.hardware_slot_id}')
+        
         messages.success(request, 'Booking cancelled.')
     return redirect('my_bookings')
 
