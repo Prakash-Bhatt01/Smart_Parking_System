@@ -36,6 +36,7 @@ def lot_detail(request, lot_id):
     ev_slots        = lot.slots.filter(vehicle_type='ev')
     available_count = lot.slots.filter(is_available=True).count()
     booked_count    = lot.slots.filter(is_available=False).count()
+    hardware_slots  = lot.slots.filter(is_hardware_slot=True)
     return render(request, 'lot_detail.html', {
         'lot':             lot,
         'car_slots':       car_slots,
@@ -43,6 +44,7 @@ def lot_detail(request, lot_id):
         'ev_slots':        ev_slots,
         'available_count': available_count,
         'booked_count':    booked_count,
+        'hardware_slots':  hardware_slots,
     })
 
 
