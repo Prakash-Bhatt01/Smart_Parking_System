@@ -1697,3 +1697,72 @@ footer {
         text-align: center;
     }
 }
+
+/* ══════════════════════════════════════
+   HARDWARE PROTOTYPE SLOTS STYLING
+══════════════════════════════════════ */
+
+/* Hardware section header with dark orange gradient */
+.hw-header {
+    background: linear-gradient(135deg, #e65100, #bf360c) !important;
+}
+
+.hw-header .vehicle-icon {
+    background: rgba(255,255,255,0.2);
+    padding: 0.5rem;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hw-header h2 {
+    color: white !important;
+}
+
+.hw-header .slot-count {
+    color: rgba(255,255,255,0.9) !important;
+}
+
+/* HW badge for hardware slot cards */
+.hw-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: #f57c00;
+    color: white;
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 2px 5px;
+    border-radius: 3px;
+    letter-spacing: 0.3px;
+    animation: hw-pulse 2s infinite;
+}
+
+/* Hardware slot cards with orange border */
+.slot-hardware {
+    border-color: #f57c00 !important;
+    border-width: 2px;
+}
+
+/* Ensure vehicle-section has relative positioning for absolute badge */
+.vehicle-section {
+    position: relative;
+}
+
+/* Pulsing animation for HW badge */
+@keyframes hw-pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* Additional styling for hardware slots in grid */
+.vehicle-section .slot-card {
+    position: relative;
+}

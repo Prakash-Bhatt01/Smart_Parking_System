@@ -157,9 +157,9 @@
         {% if hardware_slots %}
         <div class="slots-grid">
             {% for slot in hardware_slots %}
-            <div class="slot-card {% if slot.is_available %}slot-available{% else %}slot-occupied{% endif %}" style="position: relative;">
+            <div class="slot-card slot-hardware {% if slot.is_available %}slot-available{% else %}slot-occupied{% endif %}">
                 <span class="slot-number">{{ slot.slot_number }}</span>
-                <span style="position: absolute; top: 5px; right: 5px; background: #f57c00; color: white; font-size: 0.62rem; padding: 1px 5px; border-radius: 3px; font-weight: bold;">HW</span>
+                <span class="hw-badge">HW</span>
                 {% if slot.is_available %}
                     {% if user.is_authenticated %}
                         <a href="{% url 'book_slot' slot.id %}" class="slot-book-btn">Book</a>
