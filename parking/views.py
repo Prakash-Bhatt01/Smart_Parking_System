@@ -4,15 +4,15 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.core.files.base import ContentFile
-from django.conf import settings
+from django.views.decorators.cache import never_cache
 from .models import ParkingLot, ParkingSlot, Booking, Vehicle
 from .forms import RegisterForm, BookingForm, VehicleForm
 from datetime import timedelta
 import qrcode
 from io import BytesIO
-import os
 
 
+@never_cache
 def home(request):
     lots = ParkingLot.objects.filter(is_active=True)[:6]
     return render(request, 'home.html', {'lots': lots})
@@ -38,7 +38,6 @@ def lot_detail(request, lot_id):
     ev_slots        = lot.slots.filter(vehicle_type='ev')
     available_count = lot.slots.filter(is_available=True).count()
     booked_count    = lot.slots.filter(is_available=False).count()
-    hardware_slots  = lot.slots.filter(is_hardware_slot=True)
     return render(request, 'lot_detail.html', {
         'lot':             lot,
         'car_slots':       car_slots,
@@ -46,7 +45,6 @@ def lot_detail(request, lot_id):
         'ev_slots':        ev_slots,
         'available_count': available_count,
         'booked_count':    booked_count,
-        'hardware_slots':  hardware_slots,
     })
 
 
@@ -75,13 +73,6 @@ def book_slot(request, slot_id):
             booking.save()
             slot.is_available = False
             slot.save()
-            
-            # Send hardware signal if this is a hardware slot
-            if slot.is_hardware_slot:
-                signal_file_path = os.path.join(settings.BASE_DIR, 'hardware_signals.txt')
-                with open(signal_file_path, 'a') as f:
-                    f.write(f'BOOK:{slot.hardware_slot_id}\n')
-                print(f'Hardware signal sent: BOOK:{slot.hardware_slot_id}')
             
             messages.success(request, f'Slot {slot.slot_number} booked successfully!')
             return redirect('payment_page', booking_id=booking.id)
@@ -232,13 +223,6 @@ def cancel_booking(request, booking_id):
         booking.slot.is_available = True
         booking.slot.save()
         
-        # Send hardware signal if this is a hardware slot
-        if booking.slot.is_hardware_slot:
-            signal_file_path = os.path.join(settings.BASE_DIR, 'hardware_signals.txt')
-            with open(signal_file_path, 'a') as f:
-                f.write(f'CANCEL:{booking.slot.hardware_slot_id}\n')
-            print(f'Hardware signal sent: CANCEL:{booking.slot.hardware_slot_id}')
-        
         messages.success(request, 'Booking cancelled.')
     return redirect('my_bookings')
 
@@ -246,19 +230,60 @@ def cancel_booking(request, booking_id):
 @login_required
 def extend_booking(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id, user=request.user)
-    if request.method == 'POST' and booking.status in ['confirmed', 'active', 'overstay']:
-        try:
-            mins = int(request.POST.get('extend_minutes', '30'))
-        except ValueError:
-            mins = 30
-        booking.end_time = booking.end_time + timedelta(minutes=mins)
-        now = timezone.now()
-        # If end_time is now in the future, clear overstay and recompute
-        if booking.end_time > now:
-            booking.fine_amount = 0
-            booking.status = 'active' if booking.start_time <= now else 'confirmed'
-        booking.save()
-        messages.success(request, f'Booking extended by {mins} minutes.')
+    
+    # Only accept POST requests
+    if request.method != 'POST':
+        return redirect('my_bookings')
+    
+    # Check booking status is confirmed or active
+    if booking.status not in ['confirmed', 'active']:
+        messages.error(request, 'This booking cannot be extended.')
+        return redirect('my_bookings')
+    
+    # Get extend_minutes from POST data
+    try:
+        extend_minutes = int(request.POST.get('extend_minutes', '30'))
+    except ValueError:
+        extend_minutes = 30
+    
+    # Validate extend_minutes is either 30 or 60 only
+    if extend_minutes not in [30, 60]:
+        messages.error(request, 'Invalid extension duration. Please choose 30 or 60 minutes.')
+        return redirect('my_bookings')
+    
+    # Calculate new total extended
+    new_total_extended = booking.time_extended_by + extend_minutes
+    
+    # Check if new total would exceed 60 minutes
+    if new_total_extended > 60:
+        remaining = 60 - booking.time_extended_by
+        messages.error(
+            request, 
+            f'Cannot extend more than 1 hour total. You have already extended {booking.time_extended_by} minutes. '
+            f'Maximum remaining extension is {remaining} minutes.'
+        )
+        return redirect('my_bookings')
+    
+    # Add extend_minutes to booking.end_time
+    booking.end_time = booking.end_time + timedelta(minutes=extend_minutes)
+    
+    # Update booking.time_extended_by
+    booking.time_extended_by = new_total_extended
+    
+    # Recalculate booking.total_cost
+    duration_hours = (booking.end_time - booking.start_time).total_seconds() / 3600
+    booking.total_cost = round(duration_hours * float(booking.slot.lot.price_per_hour), 2)
+    
+    # Save the booking
+    booking.save()
+    
+    # Show success message
+    new_end_time = booking.end_time.strftime('%I:%M %p')
+    messages.success(
+        request, 
+        f'Parking time extended by {extend_minutes} minutes. New end time is {new_end_time}. Additional cost added.'
+    )
+    
     return redirect('my_bookings')
 
 

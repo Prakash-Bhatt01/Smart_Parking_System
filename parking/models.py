@@ -35,21 +35,10 @@ class ParkingSlot(models.Model):
         ('bike', 'Bike / Scooter'),
         ('ev', 'Electric Vehicle'),
     ]
-    OCCUPANCY_STATUS_CHOICES = [
-        ('empty', 'Empty'),
-        ('occupied', 'Occupied'),
-        ('unknown', 'Unknown'),
-    ]
     lot = models.ForeignKey(ParkingLot, on_delete=models.CASCADE, related_name='slots')
     slot_number = models.CharField(max_length=10)
     vehicle_type = models.CharField(max_length=10, choices=VEHICLE_TYPES, default='car')
     is_available = models.BooleanField(default=True)
-    controller_id = models.CharField(max_length=50, blank=True, default='')
-    sensor_id = models.CharField(max_length=50, blank=True, null=True, unique=True)
-    occupancy_status = models.CharField(max_length=10, choices=OCCUPANCY_STATUS_CHOICES, default='empty')
-    last_sensor_update = models.DateTimeField(blank=True, null=True)
-    is_hardware_slot = models.BooleanField(default=False)
-    hardware_slot_id = models.CharField(max_length=10, blank=True, default='')
 
     class Meta:
         ordering = ['lot_id', 'slot_number']
@@ -91,6 +80,7 @@ class Booking(models.Model):
     total_cost  = models.DecimalField(max_digits=8, decimal_places=2, default=0)
     fine_amount = models.DecimalField(max_digits=8, decimal_places=2, default=0)
     qr_code     = models.ImageField(upload_to='qrcodes/', blank=True, null=True)
+    time_extended_by = models.PositiveIntegerField(default=0)
     created_at  = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):

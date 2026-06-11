@@ -3,14 +3,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#1a73e8">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="SmartPark">
+    <link rel="icon" type="image/png" href="{% static 'icon-192.png' %}">
+    <link rel="shortcut icon" type="image/png" href="{% static 'icon-192.png' %}">
     <link rel="manifest" href="/static/manifest.json">
     <title>{% block title %}SmartPark{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=2">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -19,28 +23,33 @@
 <body>
 
 <nav class="navbar">
-    <a href="{% url 'home' %}" class="nav-brand">
-        <i class="fas fa-parking"></i> SmartPark
-    </a>
-    <ul class="nav-links">
-        <li><a href="{% url 'home' %}">Home</a></li>
-        <li><a href="{% url 'search' %}">Find Parking</a></li>
-        {% if user.is_authenticated %}
-            <li><a href="{% url 'my_bookings' %}">My Bookings</a></li>
-            <li><a href="{% url 'profile' %}">Profile</a></li>
-            <li>
-                <form method="post" action="{% url 'logout' %}" style="display: inline;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn-outline" style="border: none; background: none; cursor: pointer;">
-                        Logout
-                    </button>
-                </form>
-            </li>
-        {% else %}
-            <li><a href="{% url 'login' %}">Login</a></li>
-            <li><a href="{% url 'register' %}" class="btn-primary">Register</a></li>
-        {% endif %}
-    </ul>
+    <div class="navbar-container">
+        <a class="navbar-brand" href="{% url 'home' %}">
+            <i class="fas fa-parking"></i> SmartPark
+        </a>
+        <div class="navbar-links">
+            <a class="nav-link" href="{% url 'home' %}">
+                <i class="fas fa-home"></i> Home
+            </a>
+            <a class="nav-link" href="{% url 'search' %}">
+                <i class="fas fa-search"></i> Find Parking
+            </a>
+            {% if user.is_authenticated %}
+                <a class="nav-link" href="{% url 'my_bookings' %}">
+                    <i class="fas fa-calendar"></i> My Bookings
+                </a>
+                <a class="nav-link" href="{% url 'profile' %}">
+                    <i class="fas fa-user"></i> Profile
+                </a>
+                <a class="nav-link btn-logout" href="{% url 'logout' %}">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            {% else %}
+                <a class="nav-link" href="{% url 'login' %}">Login</a>
+                <a class="nav-link btn-register" href="{% url 'register' %}">Register</a>
+            {% endif %}
+        </div>
+    </div>
 </nav>
 
 {% if messages %}

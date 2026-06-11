@@ -5,7 +5,7 @@ from .models import ParkingLot, ParkingSlot, Booking, Vehicle
 class ParkingSlotInline(admin.TabularInline):
     model = ParkingSlot
     extra = 5
-    fields = ['slot_number', 'vehicle_type', 'is_available', 'is_hardware_slot', 'hardware_slot_id']
+    fields = ['slot_number', 'vehicle_type', 'is_available']
 
 
 @admin.register(ParkingLot)
@@ -18,8 +18,8 @@ class ParkingLotAdmin(admin.ModelAdmin):
 
 @admin.register(ParkingSlot)
 class ParkingSlotAdmin(admin.ModelAdmin):
-    list_display  = ['slot_number', 'vehicle_type', 'lot', 'is_available', 'is_hardware_slot', 'hardware_slot_id']
-    list_filter   = ['vehicle_type', 'is_available', 'is_hardware_slot', 'lot']
+    list_display  = ['slot_number', 'vehicle_type', 'lot', 'is_available']
+    list_filter   = ['vehicle_type', 'is_available', 'lot']
     search_fields = ['slot_number']
 
 

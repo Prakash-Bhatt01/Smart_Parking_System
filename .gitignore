@@ -26,9 +26,9 @@ wheels/
 # Django
 *.log
 local_settings.py
-db.sqlite3
+# db.sqlite3
 db.sqlite3-journal
-/media
+# /media
 /staticfiles
 
 # IDE
@@ -51,11 +51,11 @@ test_*.py
 *_test.py
 
 # Documentation (optional - remove if you want to include these)
-*.md
-!README.md
+# *.md
+# !README.md
 
 # Kiro specs (optional - remove if you want to include these)
-.kiro/
+# .kiro/
 
 # Hardware signal files (runtime generated)
 hardware_signals.txt

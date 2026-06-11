@@ -11,15 +11,17 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 5000);
     });
 });
+
 // Register Service Worker for PWA
 if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (let registration of registrations) {
+            registration.unregister();
+        }
+    });
     window.addEventListener('load', function() {
         navigator.serviceWorker.register('/static/sw.js')
-            .then(function(reg) {
-                console.log('SmartPark SW registered!', reg);
-            })
-            .catch(function(err) {
-                console.log('SW failed:', err);
-            });
+            .then(reg => console.log('SW registered'))
+            .catch(err => console.log('SW error', err));
     });
 }

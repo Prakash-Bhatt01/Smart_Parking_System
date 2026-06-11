@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navbar CSS Diagnostic Test</title>
+    <link rel="stylesheet" href="static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0f172a;
+            color: white;
+            font-family: 'Inter', sans-serif;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 100px auto;
+            padding: 2rem;
+        }
+        .test-section {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .test-section h2 {
+            color: #38bdf8;
+            margin-bottom: 1rem;
+        }
+        .css-check {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #334155;
+        }
+        .css-check:last-child {
+            border-bottom: none;
+        }
+        .status-pass {
+            color: #34a853;
+            font-weight: 600;
+        }
+        .status-fail {
+            color: #ea4335;
+            font-weight: 600;
+        }
+        .viewport-info {
+            background: #0f172a;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ACTUAL NAVBAR FROM BASE.HTML -->
+<nav class="navbar-glass">
+    <div class="navbar-container">
+        <a href="/" class="nav-brand-modern">
+            <i class="fas fa-parking"></i>
+            <span class="brand-text">
+                <span class="brand-smart">Smart</span><span class="brand-park">Park</span>
+            </span>
+        </a>
+        <ul class="nav-links-modern">
+            <li><a href="/" class="nav-pill">Home</a></li>
+            <li><a href="/search/" class="nav-pill">Find Parking</a></li>
+            <li><a href="/bookings/" class="nav-pill">My Bookings</a></li>
+            <li><a href="/profile/" class="nav-pill">Profile</a></li>
+            <li>
+                <button type="button" class="btn-logout-modern">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </li>
+        </ul>
+    </div>
+    <div class="navbar-gradient-line"></div>
+</nav>
+
+<div class="test-container">
+    <div class="test-section">
+        <h2><i class="fas fa-check-circle"></i> CSS Diagnostic Test</h2>
+        <p>This page tests if the navbar CSS is loading and applying correctly.</p>
+        
+        <div class="viewport-info">
+            <strong>Current Viewport:</strong> <span id="viewport-width"></span> x <span id="viewport-height"></span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2><i class="fas fa-code"></i> CSS Properties Check</h2>
+        <p>Checking if critical CSS properties are applied to navbar elements...</p>
+        <div id="css-checks"></div>
+    </div>
+
+    <div class="test-section">
+        <h2><i class="fas fa-mobile-alt"></i> Responsive Test</h2>
+        <p>Resize your browser window or use DevTools to test these breakpoints:</p>
+        <ul style="padding-left: 2rem; line-height: 2;">
+            <li><strong>Desktop:</strong> > 768px (Full Size)</li>
+            <li><strong>Tablet:</strong> 768px (Medium)</li>
+            <li><strong>Mobile:</strong> 640px (Small)</li>
+            <li><strong>Small Mobile:</strong> 480px (Extra Small)</li>
+        </ul>
+        <div class="viewport-info">
+            <strong>Current Breakpoint:</strong> <span id="breakpoint"></span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2><i class="fas fa-list-check"></i> Visual Checks</h2>
+        <div class="css-check">
+            <span>Navbar is horizontal (not vertical)</span>
+            <span class="status-pass">CHECK VISUALLY ✓</span>
+        </div>
+        <div class="css-check">
+            <span>All buttons visible in one row</span>
+            <span class="status-pass">CHECK VISUALLY ✓</span>
+        </div>
+        <div class="css-check">
+            <span>No buttons stacking vertically</span>
+            <span class="status-pass">CHECK VISUALLY ✓</span>
+        </div>
+        <div class="css-check">
+            <span>Brand logo on left, buttons on right</span>
+            <span class="status-pass">CHECK VISUALLY ✓</span>
+        </div>
+        <div class="css-check">
+            <span>Gradient line visible below navbar</span>
+            <span class="status-pass">CHECK VISUALLY ✓</span>
+        </div>
+    </div>
+</div>
+
+<script>
+// Update viewport dimensions
+function updateViewport() {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    document.getElementById('viewport-width').textContent = width + 'px';
+    document.getElementById('viewport-height').textContent = height + 'px';
+    
+    // Determine breakpoint
+    let breakpoint;
+    if (width > 768) breakpoint = 'Desktop (> 768px)';
+    else if (width > 640) breakpoint = 'Tablet (768px)';
+    else if (width > 480) breakpoint = 'Mobile (640px)';
+    else breakpoint = 'Small Mobile (480px)';
+    
+    document.getElementById('breakpoint').textContent = breakpoint;
+}
+
+// Check CSS properties
+function checkCSSProperties() {
+    const navbarContainer = document.querySelector('.navbar-container');
+    const navLinks = document.querySelector('.nav-links-modern');
+    const navPill = document.querySelector('.nav-pill');
+    
+    const checks = [];
+    
+    if (navbarContainer) {
+        const containerStyle = window.getComputedStyle(navbarContainer);
+        checks.push({
+            property: '.navbar-container display',
+            value: containerStyle.display,
+            expected: 'flex',
+            pass: containerStyle.display === 'flex'
+        });
+        checks.push({
+            property: '.navbar-container align-items',
+            value: containerStyle.alignItems,
+            expected: 'center',
+            pass: containerStyle.alignItems === 'center'
+        });
+    }
+    
+    if (navLinks) {
+        const linksStyle = window.getComputedStyle(navLinks);
+        checks.push({
+            property: '.nav-links-modern display',
+            value: linksStyle.display,
+            expected: 'flex',
+            pass: linksStyle.display === 'flex'
+        });
+        checks.push({
+            property: '.nav-links-modern flex-wrap',
+            value: linksStyle.flexWrap,
+            expected: 'nowrap',
+            pass: linksStyle.flexWrap === 'nowrap'
+        });
+        checks.push({
+            property: '.nav-links-modern flex-shrink',
+            value: linksStyle.flexShrink,
+            expected: '0',
+            pass: linksStyle.flexShrink === '0'
+        });
+    }
+    
+    if (navPill) {
+        const pillStyle = window.getComputedStyle(navPill);
+        checks.push({
+            property: '.nav-pill display',
+            value: pillStyle.display,
+            expected: 'inline-flex',
+            pass: pillStyle.display === 'inline-flex' || pillStyle.display === 'flex'
+        });
+        checks.push({
+            property: '.nav-pill white-space',
+            value: pillStyle.whiteSpace,
+            expected: 'nowrap',
+            pass: pillStyle.whiteSpace === 'nowrap'
+        });
+    }
+    
+    // Render checks
+    const checksContainer = document.getElementById('css-checks');
+    checksContainer.innerHTML = checks.map(check => `
+        <div class="css-check">
+            <span>${check.property}: <code>${check.value}</code> (expected: ${check.expected})</span>
+            <span class="${check.pass ? 'status-pass' : 'status-fail'}">${check.pass ? '✓ PASS' : '✗ FAIL'}</span>
+        </div>
+    `).join('');
+}
+
+// Run on load and resize
+updateViewport();
+checkCSSProperties();
+window.addEventListener('resize', () => {
+    updateViewport();
+    checkCSSProperties();
+});
+</script>
+
+</body>
+</html>

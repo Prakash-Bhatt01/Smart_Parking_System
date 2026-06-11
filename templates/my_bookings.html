@@ -97,6 +97,13 @@
                                     <i class="fas fa-times"></i> Cancel
                                 </button>
                             </form>
+                            {% if booking.time_extended_by < 60 %}
+                                {% if booking.status == 'confirmed' or booking.status == 'active' %}
+                            <button class="btn-extend-sm" onclick="openExtendModal({{ booking.id }}, '{{ booking.end_time|date:'g:i A' }}', {{ booking.time_extended_by }})">
+                                <i class="fas fa-clock"></i> Extend Time
+                            </button>
+                                {% endif %}
+                            {% endif %}
                             {% else %}<span class="text-muted">—</span>{% endif %}
                         </td>
                     </tr>
@@ -279,6 +286,108 @@
 
 </div>
 
+<!-- Extend Time Modal -->
+<div class="extend-modal-overlay" id="extendModal">
+    <div class="extend-modal-card">
+        <h3 style="font-size: 1.2rem; margin-bottom: 1rem; color: #f1f5f9;">
+            <i class="fas fa-clock"></i> Extend Parking Time
+        </h3>
+        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 0.8rem; margin-bottom: 1rem;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.4rem;">
+                <span style="color: #94a3b8;">Current End Time:</span>
+                <strong style="color: #f1f5f9;" id="modalEndTime">--</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+                <span style="color: #94a3b8;">Already Extended:</span>
+                <strong style="color: #38bdf8;" id="modalExtended">0 min</strong>
+            </div>
+        </div>
+        <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 1rem;">
+            <i class="fas fa-info-circle"></i> Maximum 1 hour extension per booking
+        </p>
+        <form id="extendForm" method="post" action="">
+            {% csrf_token %}
+            <input type="hidden" name="extend_minutes" id="extendMinutesInput" value="30">
+            <div style="display: flex; gap: 0.8rem; margin-bottom: 1.5rem;">
+                <button type="button" class="extend-option-btn" id="extend30Btn" onclick="selectExtension(30)">
+                    <i class="fas fa-clock"></i> +30 min
+                </button>
+                <button type="button" class="extend-option-btn" id="extend60Btn" onclick="selectExtension(60)">
+                    <i class="fas fa-clock"></i> +60 min
+                </button>
+            </div>
+            <div style="display: flex; gap: 0.8rem;">
+                <button type="submit" class="btn-primary btn-block">
+                    <i class="fas fa-check"></i> Confirm Extension
+                </button>
+                <button type="button" class="btn-outline btn-block" onclick="closeExtendModal()">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let currentBookingId = null;
+let currentExtended = 0;
+
+function openExtendModal(bookingId, endTime, alreadyExtended) {
+    currentBookingId = bookingId;
+    currentExtended = alreadyExtended;
+    
+    document.getElementById('modalEndTime').textContent = endTime;
+    document.getElementById('modalExtended').textContent = alreadyExtended + ' min';
+    document.getElementById('extendForm').action = `/extend/${bookingId}/`;
+    
+    // Disable +60 button if already extended 30 minutes
+    const extend30Btn = document.getElementById('extend30Btn');
+    const extend60Btn = document.getElementById('extend60Btn');
+    
+    extend30Btn.disabled = false;
+    extend60Btn.disabled = false;
+    
+    if (alreadyExtended === 30) {
+        extend60Btn.disabled = true;
+        selectExtension(30); // Auto-select +30 as only option
+    } else if (alreadyExtended === 60) {
+        extend30Btn.disabled = true;
+        extend60Btn.disabled = true;
+    } else {
+        selectExtension(30); // Default to +30
+    }
+    
+    document.getElementById('extendModal').classList.add('active');
+}
+
+function closeExtendModal() {
+    document.getElementById('extendModal').classList.remove('active');
+}
+
+function selectExtension(minutes) {
+    document.getElementById('extendMinutesInput').value = minutes;
+    
+    // Visual feedback
+    const extend30Btn = document.getElementById('extend30Btn');
+    const extend60Btn = document.getElementById('extend60Btn');
+    
+    extend30Btn.style.background = minutes === 30 ? 'linear-gradient(135deg, #38bdf8, #818cf8)' : 'transparent';
+    extend30Btn.style.color = minutes === 30 ? 'white' : '#38bdf8';
+    extend30Btn.style.borderColor = minutes === 30 ? 'transparent' : '#38bdf8';
+    
+    extend60Btn.style.background = minutes === 60 ? 'linear-gradient(135deg, #38bdf8, #818cf8)' : 'transparent';
+    extend60Btn.style.color = minutes === 60 ? 'white' : '#38bdf8';
+    extend60Btn.style.borderColor = minutes === 60 ? 'transparent' : '#38bdf8';
+}
+
+// Close modal on overlay click
+document.getElementById('extendModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeExtendModal();
+    }
+});
+</script>
+
 <script>
 function showTab(tab, btn) {
     document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
@@ -319,13 +428,41 @@ function updateTimers() {
         const hours   = Math.floor(diffEnd / 3600000);
         const minutes = Math.floor((diffEnd % 3600000) / 60000);
         const seconds = Math.floor((diffEnd % 60000) / 1000);
+        
+        // Updated color logic with orange for 10-20 min range
         const color   = diffEnd < 600000 ? 'var(--danger)' :
+                        diffEnd < 1200000 ? '#fb923c' :
                         diffEnd < 1800000 ? '#fbbc04' : 'var(--success)';
 
         el.innerHTML = `<span style="color:${color};font-weight:700;font-size:0.85rem;">
             ⏱ ${hours}h ${minutes}m ${seconds}s
         </span>`;
+        
+        // 20-minute warning banner
+        let banner20 = el.querySelector('.warning-20min-banner');
+        if (diffEnd < 1200000 && diffEnd >= 600000) {
+            if (!banner20) {
+                banner20 = document.createElement('div');
+                banner20.className = 'warning-20min-banner';
+                banner20.innerHTML = '⚠️ 20 min left — Consider extending your parking time!';
+                el.appendChild(banner20);
+            }
+            banner20.style.display = 'block';
+        } else if (banner20) {
+            banner20.style.display = 'none';
+        }
 
+        // 20-minute notification (NEW)
+        if (diffEnd < 1200000 && diffEnd > 1194000) {
+            if (Notification.permission === 'granted') {
+                new Notification('SmartPark — Parking Ending Soon!', {
+                    body: 'Your parking slot ends in 20 minutes. Consider extending your time to avoid overstay fine.',
+                    icon: '/static/icon-192.png'
+                });
+            }
+        }
+
+        // 10-minute notification (EXISTING - UNCHANGED)
         if (diffEnd < 600000 && diffEnd > 594000) {
             if (Notification.permission === 'granted') {
                 new Notification('SmartPark — Time Running Out!', {

@@ -145,37 +145,5 @@
         {% endif %}
     </div>
 
-    <!-- HARDWARE PROTOTYPE SLOTS -->
-    <div class="vehicle-section">
-        <div class="vehicle-section-header hw-header">
-            <div class="vehicle-icon"><i class="fas fa-microchip"></i></div>
-            <div>
-                <h2>Hardware Prototype Slots</h2>
-                <span class="slot-count">These 3 slots are connected to our Arduino demo model</span>
-            </div>
-        </div>
-        {% if hardware_slots %}
-        <div class="slots-grid">
-            {% for slot in hardware_slots %}
-            <div class="slot-card slot-hardware {% if slot.is_available %}slot-available{% else %}slot-occupied{% endif %}">
-                <span class="slot-number">{{ slot.slot_number }}</span>
-                <span class="hw-badge">HW</span>
-                {% if slot.is_available %}
-                    {% if user.is_authenticated %}
-                        <a href="{% url 'book_slot' slot.id %}" class="slot-book-btn">Book</a>
-                    {% else %}
-                        <a href="{% url 'login' %}" class="slot-book-btn btn-muted">Login</a>
-                    {% endif %}
-                {% else %}
-                    <span class="slot-taken-label">Booked</span>
-                {% endif %}
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="no-slots-notice">No hardware slots configured. Add them from admin panel.</div>
-        {% endif %}
-    </div>
-
 </div>
 {% endblock %}

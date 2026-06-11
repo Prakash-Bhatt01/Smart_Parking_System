@@ -4,40 +4,40 @@
 {% block content %}
 
 <!-- HERO SECTION -->
-<section class="hero">
+<section class="hero-section">
     <div class="hero-content">
-        <h1>Find & Book Parking <span class="highlight">Instantly</span></h1>
-        <p>Check real-time slot availability near you. No more driving in circles.</p>
-        <form action="{% url 'search' %}" method="GET" class="hero-search">
+        <h1>Find Parking <span class="highlight">Instantly</span></h1>
+        <p>Real-time availability. Zero hassle.</p>
+        
+        <form action="{% url 'search' %}" method="GET" class="hero-search-box">
             <div class="search-input-wrap">
                 <i class="fas fa-map-marker-alt"></i>
                 <input type="text" name="city" placeholder="Enter your city or area...">
             </div>
             <select name="vehicle_type">
                 <option value="">All Vehicles</option>
-                <option value="car">🚗 Car</option>
-                <option value="bike">🏍️ Bike</option>
-                <option value="ev">⚡ Electric Vehicle</option>
+                <option value="car">Car</option>
+                <option value="bike">Bike/Scooter</option>
+                <option value="ev">Electric Vehicle</option>
             </select>
             <button type="submit">
                 <i class="fas fa-search"></i> Search
             </button>
         </form>
-    </div>
-    <div class="hero-stats">
-        <div class="stat-item">
-            <span class="stat-number">500+</span>
-            <span class="stat-label">Parking Lots</span>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat-item">
-            <span class="stat-number">10K+</span>
-            <span class="stat-label">Slots Available</span>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat-item">
-            <span class="stat-number">24/7</span>
-            <span class="stat-label">Support</span>
+        
+        <div class="hero-stats">
+            <div class="stat-card">
+                <div class="stat-number">500+</div>
+                <div class="stat-label">Parking Lots</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">10K+</div>
+                <div class="stat-label">Slots</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">24/7</div>
+                <div class="stat-label">Available</div>
+            </div>
         </div>
     </div>
 </section>
@@ -47,106 +47,119 @@
     <div class="container">
         <h2 class="section-title">Parking Near You</h2>
         <p class="map-subtitle">Allow location access to see parking lots near you on the map.</p>
-        <div id="parking-map"></div>
+        <div id="parking-map" style="height:450px;width:100%;position:relative;z-index:1;"></div>
     </div>
 </section>
 
 <script>
-const map = L.map('parking-map').setView([12.9716, 77.5946], 13);
+document.addEventListener('DOMContentLoaded', function() {
+    const map = L.map('parking-map').setView([12.9716, 77.5946], 13);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors'
-}).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
 
-const parkingIcon = L.divIcon({
-    className: '',
-    html: `<div style="
-        background:#1a73e8;color:white;
-        width:36px;height:36px;border-radius:50%;
-        display:flex;align-items:center;justify-content:center;
-        font-weight:700;font-size:1rem;
-        box-shadow:0 2px 8px rgba(0,0,0,0.3);
-        border:3px solid white;">P</div>`,
-    iconSize: [36, 36],
-    iconAnchor: [18, 18]
-});
+    const parkingIcon = L.divIcon({
+        className: '',
+        html: `<div style="
+            background:#1a73e8;color:white;
+            width:36px;height:36px;border-radius:50%;
+            display:flex;align-items:center;justify-content:center;
+            font-weight:700;font-size:1rem;
+            box-shadow:0 2px 8px rgba(0,0,0,0.3);
+            border:3px solid white;">P</div>`,
+        iconSize: [36, 36],
+        iconAnchor: [18, 18]
+    });
 
-const parkingLots = [
-    {% for lot in lots %}
-    {
-        name: "{{ lot.name }}",
-        address: "{{ lot.address }}",
-        lat: {{ lot.latitude }},
-        lng: {{ lot.longitude }},
-        available: {{ lot.available_slots }},
-        total: {{ lot.total_slots }},
-        price: {{ lot.price_per_hour }},
-        id: {{ lot.id }}
-    },
-    {% endfor %}
-];
+    const parkingLots = [
+        {% for lot in lots %}
+        {
+            name: "{{ lot.name|escapejs }}",
+            address: "{{ lot.address|escapejs }}",
+            lat: {{ lot.latitude|default:0 }},
+            lng: {{ lot.longitude|default:0 }},
+            available: {{ lot.available_slots|default:0 }},
+            total: {{ lot.total_slots|default:0 }},
+            price: {{ lot.price_per_hour|default:0 }},
+            id: {{ lot.id|default:0 }}
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
 
-parkingLots.forEach(function(lot) {
-    if(lot.lat && lot.lng) {
-        const marker = L.marker([lot.lat, lot.lng], {icon: parkingIcon}).addTo(map);
-        marker.bindPopup(`
-            <div style="font-family:Inter,sans-serif;min-width:180px;">
-                <strong style="font-size:0.95rem;">${lot.name}</strong><br>
-                <span style="font-size:0.82rem;color:#666;">${lot.address}</span><br><br>
-                <span style="color:${lot.available > 0 ? '#34a853' : '#ea4335'};font-weight:600;">
-                    ${lot.available}/${lot.total} slots free
-                </span>
-                &nbsp;·&nbsp;
-                <span style="color:#1a73e8;font-weight:600;">₹${lot.price}/hr</span>
-                <br><br>
-                <a href="/lot/${lot.id}/" style="
-                    background:#1a73e8;color:white;
-                    padding:0.4rem 1rem;border-radius:6px;
-                    font-size:0.82rem;font-weight:600;
-                    text-decoration:none;display:inline-block;">
-                    View Slots →
-                </a>
-            </div>
-        `);
+    parkingLots.forEach(function(lot) {
+        if(lot.lat !== 0 && lot.lng !== 0 && lot.lat !== null && lot.lng !== null) {
+            const marker = L.marker([lot.lat, lot.lng], {icon: parkingIcon}).addTo(map);
+            marker.bindPopup(`
+                <div style="font-family:Inter,sans-serif;min-width:180px;">
+                    <strong style="font-size:0.95rem;">${lot.name}</strong><br>
+                    <span style="font-size:0.82rem;color:#666;">${lot.address}</span><br><br>
+                    <span style="color:${lot.available > 0 ? '#34a853' : '#ea4335'};font-weight:600;">
+                        ${lot.available}/${lot.total} slots free
+                    </span>
+                    &nbsp;·&nbsp;
+                    <span style="color:#1a73e8;font-weight:600;">₹${lot.price}/hr</span>
+                    <br><br>
+                    <a href="/lot/${lot.id}/" style="
+                        background:#1a73e8;color:white;
+                        padding:0.4rem 1rem;border-radius:6px;
+                        font-size:0.82rem;font-weight:600;
+                        text-decoration:none;display:inline-block;">
+                        View Slots →
+                    </a>
+                </div>
+            `);
+        }
+    });
+
+    // Force map to recalculate size after container is fully rendered
+    setTimeout(function() {
+        map.invalidateSize();
+    }, 100);
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(pos) {
+            const userLat = pos.coords.latitude;
+            const userLng = pos.coords.longitude;
+            map.setView([userLat, userLng], 14);
+            L.circleMarker([userLat, userLng], {
+                radius: 10,
+                fillColor: '#1a73e8',
+                color: 'white',
+                weight: 3,
+                fillOpacity: 1
+            }).addTo(map).bindPopup('<strong>You are here</strong>').openPopup();
+        }, function() {
+            map.setView([12.9716, 77.5946], 13);
+        });
     }
 });
-
-if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(function(pos) {
-        const userLat = pos.coords.latitude;
-        const userLng = pos.coords.longitude;
-        map.setView([userLat, userLng], 14);
-        L.circleMarker([userLat, userLng], {
-            radius: 10,
-            fillColor: '#1a73e8',
-            color: 'white',
-            weight: 3,
-            fillOpacity: 1
-        }).addTo(map).bindPopup('<strong>You are here</strong>').openPopup();
-    }, function() {
-        map.setView([12.9716, 77.5946], 13);
-    });
-}
 </script>
 
 <!-- HOW IT WORKS SECTION -->
 <section class="how-it-works">
+    <h2 class="section-title">How It Works</h2>
     <div class="container">
-        <h2 class="section-title">How It Works</h2>
         <div class="steps-grid">
             <div class="step-card">
-                <div class="step-icon"><i class="fas fa-search-location"></i></div>
-                <h3>1. Search</h3>
+                <div class="step-icon">
+                    <i class="fas fa-search-location"></i>
+                </div>
+                <h3>Search</h3>
                 <p>Enter your area to see all nearby parking lots with live availability.</p>
             </div>
             <div class="step-card">
-                <div class="step-icon"><i class="fas fa-th"></i></div>
-                <h3>2. Choose a Slot</h3>
+                <div class="step-icon">
+                    <i class="fas fa-th"></i>
+                </div>
+                <h3>Choose a Slot</h3>
                 <p>View the slot grid and pick any available spot that suits you.</p>
             </div>
             <div class="step-card">
-                <div class="step-icon"><i class="fas fa-calendar-check"></i></div>
-                <h3>3. Book & Go</h3>
+                <div class="step-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <h3>Book & Go</h3>
                 <p>Confirm your booking with start/end time. Cost is calculated instantly.</p>
             </div>
         </div>
@@ -158,22 +171,26 @@ if (navigator.geolocation) {
     <div class="container">
         <div class="section-header">
             <h2 class="section-title">Featured Parking Lots</h2>
-            <a href="{% url 'search' %}" class="see-all-link">See all <i class="fas fa-arrow-right"></i></a>
+            <a href="{% url 'search' %}" class="see-all-link">
+                See all <i class="fas fa-arrow-right"></i>
+            </a>
         </div>
         <div class="lots-grid">
             {% for lot in lots %}
-            <div class="lot-card">
+            <a href="{% url 'lot_detail' lot.id %}" class="lot-card">
                 {% if lot.image %}
                     <img src="{{ lot.image.url }}" alt="{{ lot.name }}" class="lot-img">
                 {% else %}
                     <div class="lot-img-placeholder">
-                        <i class="fas fa-{% if lot.vehicle_type == 'bike' %}motorcycle{% elif lot.vehicle_type == 'ev' %}bolt{% else %}car{% endif %}"></i>
+                        <i class="fas fa-parking"></i>
                     </div>
                 {% endif %}
                 <div class="lot-body">
-                    <div class="lot-type-badge">{{ lot.get_vehicle_type_display }}</div>
+                    <span class="lot-type-badge">{{ lot.get_vehicle_type_display }}</span>
                     <h3 class="lot-name">{{ lot.name }}</h3>
-                    <p class="lot-address"><i class="fas fa-map-marker-alt"></i> {{ lot.address }}</p>
+                    <p class="lot-address">
+                        <i class="fas fa-map-marker-alt"></i> {{ lot.address }}
+                    </p>
                     <div class="lot-footer">
                         <span class="availability-badge {% if lot.available_slots > 0 %}badge-green{% else %}badge-red{% endif %}">
                             <i class="fas fa-circle"></i>
@@ -185,11 +202,8 @@ if (navigator.geolocation) {
                         </span>
                         <span class="lot-price">₹{{ lot.price_per_hour }}/hr</span>
                     </div>
-                    <a href="{% url 'lot_detail' lot.id %}" class="btn-primary btn-block">
-                        View Slots <i class="fas fa-arrow-right"></i>
-                    </a>
                 </div>
-            </div>
+            </a>
             {% empty %}
             <div class="empty-notice">
                 <i class="fas fa-info-circle"></i>
