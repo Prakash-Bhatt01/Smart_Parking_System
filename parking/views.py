@@ -78,11 +78,43 @@ def lot_detail(request, lot_id):
 
 @login_required
 def book_slot(request, slot_id):
-    slot = get_object_or_404(ParkingSlot, id=slot_id, is_available=True)
+    # Get slot without requiring is_available=True to allow future bookings on occupied slots
+    slot = get_object_or_404(ParkingSlot, id=slot_id)
+    
+    # Check if slot is currently unavailable
+    if not slot.is_available:
+        # Get start_time from GET parameter (for future bookings)
+        start_time_param = request.GET.get('start_time')
+        
+        if not start_time_param:
+            # No start_time provided - redirect with error
+            messages.error(request, f'Slot {slot.slot_number} is currently occupied. Please select a future time slot.')
+            return redirect('lot_detail', lot_id=slot.lot.id)
+        
+        # Has start_time parameter - allow booking form for future booking
+        # (Form will be rendered with the start_time pre-filled)
+    
     form = BookingForm()
     if request.method == 'POST':
         form = BookingForm(request.POST)
         if form.is_valid():
+            # Get booking times from form
+            booking_start = form.cleaned_data.get('start_time')
+            booking_end = form.cleaned_data.get('end_time')
+            
+            # Check for time conflicts with existing bookings
+            conflicting_bookings = Booking.objects.filter(
+                slot=slot,
+                status__in=['confirmed', 'active'],
+                start_time__lt=booking_end,
+                end_time__gt=booking_start
+            )
+            
+            if conflicting_bookings.exists():
+                conflict = conflicting_bookings.first()
+                messages.error(request, f'Time conflict! Slot is booked until {conflict.end_time.strftime("%I:%M %p")}. Please choose a different time.')
+                return render(request, 'book_slot.html', {'slot': slot, 'form': form})
+            
             license_plate = form.cleaned_data.get('license_plate')
             vehicle = None
             if license_plate:
@@ -99,8 +131,12 @@ def book_slot(request, slot_id):
             booking.slot    = slot
             booking.vehicle = vehicle
             booking.save()
-            slot.is_available = False
-            slot.save()
+            
+            # Only mark slot as unavailable if booking starts now or in the past
+            from django.utils import timezone
+            if booking_start <= timezone.now():
+                slot.is_available = False
+                slot.save()
             
             messages.success(request, f'Slot {slot.slot_number} booked successfully!')
             return redirect('payment_page', booking_id=booking.id)
