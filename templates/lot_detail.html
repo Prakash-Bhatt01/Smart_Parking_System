@@ -218,10 +218,13 @@ function updateSlotTimers() {
             freeAtEl.textContent = `Free at ${freeAtTime}`;
         }
         
-        // Update "Book from" button text
+        // Update "Book from" button text and href with start_time parameter
         if (bookNextBtn && bookNextBtn.textContent !== 'Login to book') {
             const bookFromTime = endTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
             bookNextBtn.textContent = `Book from ${bookFromTime}`;
+            // Add start_time parameter to URL for future booking
+            const currentHref = bookNextBtn.getAttribute('href').split('?')[0];
+            bookNextBtn.setAttribute('href', `${currentHref}?start_time=${endTime.toISOString()}`);
         }
     }
 }
