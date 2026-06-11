@@ -105,3 +105,18 @@ class Booking(models.Model):
 
     def __str__(self):
         return f"Booking #{self.id} by {self.user.username}"
+
+
+class SlotConflictNotification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='slot_notifications')
+    slot = models.ForeignKey(ParkingSlot, on_delete=models.CASCADE)
+    message = models.TextField()
+    suggested_start_time = models.DateTimeField(null=True, blank=True)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Notification for {self.user.username} - Slot {self.slot.slot_number}"

@@ -5,11 +5,14 @@ from django.contrib import messages
 from django.utils import timezone
 from django.core.files.base import ContentFile
 from django.views.decorators.cache import never_cache
-from .models import ParkingLot, ParkingSlot, Booking, Vehicle
+from django.http import JsonResponse
+from .models import ParkingLot, ParkingSlot, Booking, Vehicle, SlotConflictNotification
 from .forms import RegisterForm, BookingForm, VehicleForm
 from datetime import timedelta
+from django.utils.dateparse import parse_datetime
 import qrcode
 from io import BytesIO
+import json
 
 
 @never_cache
@@ -38,6 +41,29 @@ def lot_detail(request, lot_id):
     ev_slots        = lot.slots.filter(vehicle_type='ev')
     available_count = lot.slots.filter(is_available=True).count()
     booked_count    = lot.slots.filter(is_available=False).count()
+    
+    # Get active bookings for this lot
+    now = timezone.now()
+    active_bookings = Booking.objects.filter(
+        slot__lot=lot,
+        status__in=['confirmed', 'active'],
+        end_time__gt=now
+    ).select_related('user', 'slot')
+    
+    # Build slot_booking_info dictionary
+    slot_booking_info = {}
+    for booking in active_bookings:
+        slot_booking_info[booking.slot.id] = {
+            'end_time': booking.end_time.isoformat(),
+            'user_first_name': booking.user.first_name or booking.user.username,
+            'booking_id': booking.id,
+            'time_extended_by': booking.time_extended_by
+        }
+    
+    # Convert to JSON string
+    slot_booking_info_json = json.dumps(slot_booking_info)
+    now_iso = now.isoformat()
+    
     return render(request, 'lot_detail.html', {
         'lot':             lot,
         'car_slots':       car_slots,
@@ -45,6 +71,8 @@ def lot_detail(request, lot_id):
         'ev_slots':        ev_slots,
         'available_count': available_count,
         'booked_count':    booked_count,
+        'slot_booking_info_json': slot_booking_info_json,
+        'now_iso': now_iso,
     })
 
 
@@ -77,6 +105,88 @@ def book_slot(request, slot_id):
             messages.success(request, f'Slot {slot.slot_number} booked successfully!')
             return redirect('payment_page', booking_id=booking.id)
     return render(request, 'book_slot.html', {'slot': slot, 'form': form})
+
+
+@login_required
+def check_slot_conflict(request, slot_id):
+    """Check if a time slot conflicts with existing bookings"""
+    try:
+        slot = get_object_or_404(ParkingSlot, id=slot_id)
+        
+        # Get start_time and end_time from GET parameters
+        start_time_str = request.GET.get('start_time')
+        end_time_str = request.GET.get('end_time')
+        
+        if not start_time_str or not end_time_str:
+            return JsonResponse({
+                'error': True,
+                'message': 'Missing start_time or end_time parameters'
+            })
+        
+        # Parse datetime strings
+        requested_start = parse_datetime(start_time_str)
+        requested_end = parse_datetime(end_time_str)
+        
+        if not requested_start or not requested_end:
+            return JsonResponse({
+                'error': True,
+                'message': 'Invalid datetime format'
+            })
+        
+        # Check for conflicting bookings
+        conflicting_bookings = Booking.objects.filter(
+            slot=slot,
+            status__in=['confirmed', 'active'],
+            start_time__lt=requested_end,
+            end_time__gt=requested_start
+        ).select_related('user').order_by('end_time')
+        
+        if conflicting_bookings.exists():
+            conflict = conflicting_bookings.first()
+            
+            # Find alternative slots in same lot with same vehicle type
+            alternative_slots = ParkingSlot.objects.filter(
+                lot=slot.lot,
+                vehicle_type=slot.vehicle_type,
+                is_available=True
+            ).exclude(
+                bookings__status__in=['confirmed', 'active'],
+                bookings__start_time__lt=requested_end,
+                bookings__end_time__gt=requested_start
+            ).distinct()[:3]
+            
+            alternatives = []
+            for alt_slot in alternative_slots:
+                alternatives.append({
+                    'slot_id': alt_slot.id,
+                    'slot_number': alt_slot.slot_number,
+                    'vehicle_type': alt_slot.vehicle_type
+                })
+            
+            # Suggest booking from when conflict ends
+            suggested_start = conflict.end_time
+            suggested_end = suggested_start + timedelta(hours=1)
+            
+            return JsonResponse({
+                'conflict': True,
+                'message': f'We apologize, but this slot has an active booking until {conflict.end_time.strftime("%I:%M %p")}. Please choose another time or slot.',
+                'blocked_until': conflict.end_time.strftime("%I:%M %p"),
+                'slot_extended': conflict.time_extended_by > 0,
+                'alternative_slots': alternatives,
+                'suggested_start_time': suggested_start.isoformat(),
+                'suggested_end_time': suggested_end.isoformat()
+            })
+        else:
+            return JsonResponse({
+                'conflict': False,
+                'message': 'Slot is available for your selected time.'
+            })
+            
+    except Exception as e:
+        return JsonResponse({
+            'error': True,
+            'message': f'An error occurred: {str(e)}'
+        })
 
 
 @login_required
@@ -201,12 +311,22 @@ def my_bookings(request):
         user=request.user,
         status='cancelled'
     ).order_by('-created_at')
+    
+    # Get unread conflict notifications
+    conflict_notifications = SlotConflictNotification.objects.filter(
+        user=request.user,
+        is_read=False
+    ).order_by('-created_at')
+    
+    unread_notification_count = conflict_notifications.count()
 
     return render(request, 'my_bookings.html', {
         'active_bookings':    active_bookings,
         'completed_bookings': completed_bookings,
         'overstay_bookings':  overstay_bookings,
         'cancelled_bookings': cancelled_bookings,
+        'conflict_notifications': conflict_notifications,
+        'unread_notification_count': unread_notification_count,
         'now': now,
     })
 
@@ -264,6 +384,9 @@ def extend_booking(request, booking_id):
         )
         return redirect('my_bookings')
     
+    # Store original end_time before extension
+    original_end_time = booking.end_time
+    
     # Add extend_minutes to booking.end_time
     booking.end_time = booking.end_time + timedelta(minutes=extend_minutes)
     
@@ -277,6 +400,31 @@ def extend_booking(request, booking_id):
     # Save the booking
     booking.save()
     
+    # Check for conflicting bookings after extension
+    conflicting_bookings = Booking.objects.filter(
+        slot=booking.slot,
+        status__in=['confirmed', 'active'],
+        start_time__lt=booking.end_time,
+        end_time__gt=original_end_time
+    ).exclude(id=booking.id)
+    
+    # Create notifications for conflicting bookings
+    for conflicting_booking in conflicting_bookings:
+        notification_message = (
+            f"We apologize, but Slot {booking.slot.slot_number} at {booking.slot.lot.name} "
+            f"has recently been extended until {booking.end_time.strftime('%I:%M %p on %B %d, %Y')} "
+            f"by another user and is no longer available for your selected time period. "
+            f"We suggest booking from {booking.end_time.strftime('%I:%M %p')} onwards or choosing an alternative available slot."
+        )
+        
+        SlotConflictNotification.objects.create(
+            user=conflicting_booking.user,
+            slot=booking.slot,
+            message=notification_message,
+            suggested_start_time=booking.end_time,
+            is_read=False
+        )
+    
     # Show success message
     new_end_time = booking.end_time.strftime('%I:%M %p')
     messages.success(
@@ -285,6 +433,19 @@ def extend_booking(request, booking_id):
     )
     
     return redirect('my_bookings')
+
+
+@login_required
+def mark_notification_read(request, notification_id):
+    """Mark a conflict notification as read"""
+    notification = get_object_or_404(
+        SlotConflictNotification, 
+        id=notification_id,
+        user=request.user
+    )
+    notification.is_read = True
+    notification.save()
+    return JsonResponse({"status": "ok"})
 
 
 def register_view(request):

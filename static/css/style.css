@@ -1204,3 +1204,220 @@ footer {
     border-color: #334155;
     color: #64748b;
 }
+
+
+/* ══════════════════════════════════════
+   SMART SLOT CONFLICT DETECTION STYLES
+══════════════════════════════════════ */
+
+.slot-booking-info {
+    font-size: 0.72rem;
+    margin-top: 6px;
+    text-align: center;
+}
+
+.slot-free-at {
+    color: #94a3b8;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.slot-mini-timer {
+    font-weight: 700;
+    font-size: 0.75rem;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.btn-book-next {
+    display: inline-block;
+    background: transparent;
+    border: 1px solid #38bdf8;
+    color: #38bdf8;
+    border-radius: 5px;
+    padding: 2px 7px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.btn-book-next:hover {
+    background: #38bdf8;
+    color: #0f172a;
+}
+
+#conflict-check-result {
+    margin-top: 10px;
+    transition: all 0.3s ease;
+}
+
+.conflict-warning-card {
+    background: rgba(248, 113, 113, 0.1);
+    border: 1px solid #f87171;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+}
+
+.conflict-warning-card .conflict-title {
+    color: #f87171;
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+}
+
+.conflict-warning-card .conflict-message {
+    color: #94a3b8;
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
+
+.conflict-warning-card .blocked-until {
+    color: #f87171;
+    font-weight: 700;
+    font-size: 1rem;
+    margin: 6px 0;
+}
+
+.alternative-slots-section {
+    margin-top: 10px;
+}
+
+.alternative-slots-section h4 {
+    color: #94a3b8;
+    font-size: 0.82rem;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.alternative-slot-card {
+    background: rgba(56, 189, 248, 0.08);
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.82rem;
+}
+
+.alternative-slot-card:hover {
+    border-color: #38bdf8;
+}
+
+.btn-book-alternative {
+    background: linear-gradient(135deg, #38bdf8, #818cf8);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.conflict-available-check {
+    background: rgba(74, 222, 128, 0.1);
+    border: 1px solid #4ade80;
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #4ade80;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.notification-panel {
+    background: rgba(56, 189, 248, 0.05);
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.notification-panel-header {
+    color: #38bdf8;
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.notification-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 10px;
+    transition: opacity 0.4s ease;
+}
+
+.notification-card.fade-out {
+    opacity: 0;
+    height: 0;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+}
+
+.notification-message {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
+
+.notification-suggested-time {
+    color: #4ade80;
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.notification-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-find-alternative {
+    background: linear-gradient(135deg, #38bdf8, #818cf8);
+    color: white;
+    border: none;
+    border-radius: 7px;
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.btn-dismiss-notification {
+    background: transparent;
+    color: #64748b;
+    border: 1px solid #334155;
+    border-radius: 7px;
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-dismiss-notification:hover {
+    border-color: #f87171;
+    color: #f87171;
+}
+
+.availability-check-spinner {
+    color: #64748b;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 0;
+}

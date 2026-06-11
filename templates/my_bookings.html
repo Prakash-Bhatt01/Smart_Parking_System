@@ -11,6 +11,45 @@
 
 <div class="container dashboard-page">
 
+    <!-- CONFLICT NOTIFICATIONS -->
+    {% if conflict_notifications %}
+    <div class="notification-panel">
+        <div class="notification-panel-header">
+            <i class="fas fa-bell"></i> Slot Availability Notifications
+            {% if unread_notification_count > 0 %}
+            <span class="tab-count" style="margin-left:8px;">{{ unread_notification_count }}</span>
+            {% endif %}
+        </div>
+        {% for notification in conflict_notifications %}
+        <div class="notification-card" id="notification-{{ notification.id }}">
+            <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;">
+                <i class="fas fa-parking" style="color:#38bdf8;font-size:1.2rem;margin-top:2px;"></i>
+                <div style="flex:1;">
+                    <strong style="color:#38bdf8;font-size:0.9rem;">Slot {{ notification.slot.slot_number }}</strong>
+                    <span style="color:#64748b;font-size:0.75rem;margin-left:8px;">{{ notification.created_at|timesince }} ago</span>
+                </div>
+            </div>
+            <div class="notification-message">
+                {{ notification.message }}
+            </div>
+            {% if notification.suggested_start_time %}
+            <div class="notification-suggested-time">
+                <i class="fas fa-clock"></i> Suggested new time: {{ notification.suggested_start_time|date:"g:i A on M d, Y" }}
+            </div>
+            {% endif %}
+            <div class="notification-actions">
+                <a href="{% url 'search' %}" class="btn-find-alternative">
+                    <i class="fas fa-search"></i> Find Alternative Slots
+                </a>
+                <button class="btn-dismiss-notification" onclick="dismissNotification({{ notification.id }})">
+                    <i class="fas fa-times"></i> Dismiss
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     {% for booking in overstay_bookings %}
     <div class="overstay-alert">
         <i class="fas fa-exclamation-triangle"></i>
@@ -520,5 +559,34 @@ function startOverstayAlerts() {
 }
 
 startOverstayAlerts();
+
+// Dismiss notification function
+async function dismissNotification(notificationId) {
+    const notificationCard = document.getElementById(`notification-${notificationId}`);
+    
+    try {
+        const response = await fetch(`/mark-notification-read/${notificationId}/`);
+        const data = await response.json();
+        
+        if (data.status === 'ok') {
+            // Fade out animation
+            notificationCard.classList.add('fade-out');
+            
+            // Remove from DOM after animation
+            setTimeout(() => {
+                notificationCard.remove();
+                
+                // If no more notifications, remove the entire panel
+                const panel = document.querySelector('.notification-panel');
+                const remainingCards = panel.querySelectorAll('.notification-card');
+                if (remainingCards.length === 0) {
+                    panel.remove();
+                }
+            }, 400);
+        }
+    } catch (error) {
+        console.error('Error dismissing notification:', error);
+    }
+}
 </script>
 {% endblock %}

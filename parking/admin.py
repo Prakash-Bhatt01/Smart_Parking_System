@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ParkingLot, ParkingSlot, Booking, Vehicle
+from .models import ParkingLot, ParkingSlot, Booking, Vehicle, SlotConflictNotification
 
 
 class ParkingSlotInline(admin.TabularInline):
@@ -29,4 +29,12 @@ class BookingAdmin(admin.ModelAdmin):
     list_filter   = ['status']
     search_fields = ['user__username']
     readonly_fields = ['total_cost', 'created_at']
+
+
+@admin.register(SlotConflictNotification)
+class SlotConflictNotificationAdmin(admin.ModelAdmin):
+    list_display = ['user', 'slot', 'is_read', 'created_at']
+    list_filter = ['is_read']
+    search_fields = ['user__username', 'slot__slot_number']
+    readonly_fields = ['created_at']
 

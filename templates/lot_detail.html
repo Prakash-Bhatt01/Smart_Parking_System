@@ -74,6 +74,15 @@
                     {% endif %}
                 {% else %}
                     <span class="slot-taken-label">Booked</span>
+                    <div class="slot-booking-info" data-slot-id="{{ slot.id }}">
+                        <span class="slot-free-at">Loading...</span>
+                        <div class="slot-mini-timer" data-slot-id="{{ slot.id }}"></div>
+                        {% if user.is_authenticated %}
+                        <a href="{% url 'book_slot' slot.id %}" class="btn-book-next" data-slot-id="{{ slot.id }}">Book next</a>
+                        {% else %}
+                        <a href="{% url 'login' %}" class="btn-book-next">Login to book</a>
+                        {% endif %}
+                    </div>
                 {% endif %}
             </div>
             {% endfor %}
@@ -105,6 +114,15 @@
                     {% endif %}
                 {% else %}
                     <span class="slot-taken-label">Booked</span>
+                    <div class="slot-booking-info" data-slot-id="{{ slot.id }}">
+                        <span class="slot-free-at">Loading...</span>
+                        <div class="slot-mini-timer" data-slot-id="{{ slot.id }}"></div>
+                        {% if user.is_authenticated %}
+                        <a href="{% url 'book_slot' slot.id %}" class="btn-book-next" data-slot-id="{{ slot.id }}">Book next</a>
+                        {% else %}
+                        <a href="{% url 'login' %}" class="btn-book-next">Login to book</a>
+                        {% endif %}
+                    </div>
                 {% endif %}
             </div>
             {% endfor %}
@@ -136,6 +154,15 @@
                     {% endif %}
                 {% else %}
                     <span class="slot-taken-label">Booked</span>
+                    <div class="slot-booking-info" data-slot-id="{{ slot.id }}">
+                        <span class="slot-free-at">Loading...</span>
+                        <div class="slot-mini-timer" data-slot-id="{{ slot.id }}"></div>
+                        {% if user.is_authenticated %}
+                        <a href="{% url 'book_slot' slot.id %}" class="btn-book-next" data-slot-id="{{ slot.id }}">Book next</a>
+                        {% else %}
+                        <a href="{% url 'login' %}" class="btn-book-next">Login to book</a>
+                        {% endif %}
+                    </div>
                 {% endif %}
             </div>
             {% endfor %}
@@ -146,4 +173,63 @@
     </div>
 
 </div>
+
+<script>
+const slotBookingInfo = {{ slot_booking_info_json|safe }};
+const serverNow = new Date("{{ now_iso }}");
+
+function updateSlotTimers() {
+    for (const slotId in slotBookingInfo) {
+        const info = slotBookingInfo[slotId];
+        const endTime = new Date(info.end_time);
+        const now = new Date();
+        
+        // Find the timer element
+        const timerEl = document.querySelector(`.slot-mini-timer[data-slot-id="${slotId}"]`);
+        const freeAtEl = document.querySelector(`.slot-booking-info[data-slot-id="${slotId}"] .slot-free-at`);
+        const bookNextBtn = document.querySelector(`.btn-book-next[data-slot-id="${slotId}"]`);
+        
+        if (!timerEl) continue;
+        
+        const diff = endTime - now;
+        
+        if (diff <= 0) {
+            // Slot is now free - reload page after 2 seconds
+            timerEl.innerHTML = '<span style="color:#4ade80;">Now Available!</span>';
+            setTimeout(() => window.location.reload(), 2000);
+            continue;
+        }
+        
+        // Calculate time remaining
+        const hours = Math.floor(diff / 3600000);
+        const minutes = Math.floor((diff % 3600000) / 60000);
+        const seconds = Math.floor((diff % 60000) / 1000);
+        
+        // Set color based on time remaining
+        let color = '#4ade80'; // green - more than 30 min
+        if (diff < 1800000) color = '#fb923c'; // orange - 10 to 30 min
+        if (diff < 600000) color = '#f87171'; // red - less than 10 min
+        
+        timerEl.innerHTML = `<span style="color:${color};">${hours}h ${minutes}m ${seconds}s until free</span>`;
+        
+        // Update "Free at" text
+        if (freeAtEl) {
+            const freeAtTime = endTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+            freeAtEl.textContent = `Free at ${freeAtTime}`;
+        }
+        
+        // Update "Book from" button text
+        if (bookNextBtn && bookNextBtn.textContent !== 'Login to book') {
+            const bookFromTime = endTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+            bookNextBtn.textContent = `Book from ${bookFromTime}`;
+        }
+    }
+}
+
+// Update immediately
+updateSlotTimers();
+
+// Update every second
+setInterval(updateSlotTimers, 1000);
+</script>
 {% endblock %}

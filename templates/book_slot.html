@@ -101,9 +101,17 @@
 
 <script>
     const pricePerHour = {{ slot.lot.price_per_hour }};
+    const slotId = {{ slot.id }};
     const startInput = document.getElementById('id_start_time');
     const endInput = document.getElementById('id_end_time');
     const preview = document.getElementById('cost-preview');
+    const submitBtn = document.querySelector('button[type="submit"]');
+    
+    let conflictCheckDiv = document.createElement('div');
+    conflictCheckDiv.id = 'conflict-check-result';
+    preview.parentNode.insertBefore(conflictCheckDiv, preview.nextSibling);
+    
+    let debounceTimer;
 
     function updateCost() {
         const start = new Date(startInput.value);
@@ -113,8 +121,115 @@
             const cost = (hours * pricePerHour).toFixed(2);
             preview.innerHTML = `<i class="fas fa-rupee-sign"></i> Estimated Cost: <strong>₹${cost}</strong> for <strong>${hours.toFixed(1)} hrs</strong>`;
             preview.classList.add('cost-ready');
+            
+            // Check for conflicts with debounce
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => checkConflict(start, end), 500);
         }
     }
+    
+    async function checkConflict(start, end) {
+        conflictCheckDiv.innerHTML = '<div class="availability-check-spinner"><i class="fas fa-spinner fa-spin"></i> Checking availability...</div>';
+        
+        try {
+            const response = await fetch(`/check-conflict/${slotId}/?start_time=${start.toISOString()}&end_time=${end.toISOString()}`);
+            const data = await response.json();
+            
+            if (data.error) {
+                conflictCheckDiv.innerHTML = `<div class="conflict-warning-card"><div class="conflict-message">${data.message}</div></div>`;
+                return;
+            }
+            
+            if (data.conflict) {
+                // Show conflict warning
+                let html = `
+                    <div class="conflict-warning-card">
+                        <div class="conflict-title">⚠️ Conflict Detected</div>
+                        <div class="conflict-message">${data.message}</div>
+                        <div class="blocked-until">Blocked until: ${data.blocked_until}</div>
+                `;
+                
+                if (data.slot_extended) {
+                    html += `<div class="conflict-message" style="margin-top:6px;"><em>This slot was recently extended by its current user.</em></div>`;
+                }
+                
+                html += `</div>`;
+                
+                // Show alternative slots
+                if (data.alternative_slots && data.alternative_slots.length > 0) {
+                    html += `
+                        <div class="alternative-slots-section">
+                            <h4>Alternative Slots Available:</h4>
+                    `;
+                    data.alternative_slots.forEach(alt => {
+                        html += `
+                            <div class="alternative-slot-card">
+                                <div>
+                                    <strong>Slot ${alt.slot_number}</strong>
+                                    <span style="color:#64748b;font-size:0.75rem;margin-left:6px;">${alt.vehicle_type}</span>
+                                </div>
+                                <a href="/book/${alt.slot_id}/" class="btn-book-alternative">Book This Instead</a>
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                }
+                
+                // Show suggested time
+                html += `
+                    <div class="alternative-slots-section">
+                        <h4>Or Book This Slot Later:</h4>
+                        <button type="button" class="btn-book-alternative" onclick="useSuggestedTime('${data.suggested_start_time}', '${data.suggested_end_time}')">
+                            Book from ${data.blocked_until} (1 hour)
+                        </button>
+                    </div>
+                `;
+                
+                conflictCheckDiv.innerHTML = html;
+                
+                // Disable submit button
+                submitBtn.disabled = true;
+                submitBtn.style.background = '#64748b';
+                submitBtn.innerHTML = '<i class="fas fa-times-circle"></i> Slot Not Available for This Time';
+                
+            } else {
+                // Show success
+                conflictCheckDiv.innerHTML = `
+                    <div class="conflict-available-check">
+                        ✓ Slot available for your selected time
+                    </div>
+                `;
+                
+                // Enable submit button
+                submitBtn.disabled = false;
+                submitBtn.style.background = 'linear-gradient(135deg, #38bdf8, #818cf8)';
+                submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm Booking';
+            }
+        } catch (error) {
+            conflictCheckDiv.innerHTML = `<div class="conflict-message" style="color:#f87171;">Error checking availability. Please try again.</div>`;
+        }
+    }
+    
+    function useSuggestedTime(suggestedStart, suggestedEnd) {
+        const start = new Date(suggestedStart);
+        const end = new Date(suggestedEnd);
+        
+        // Format for datetime-local input
+        const formatDateTime = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        };
+        
+        startInput.value = formatDateTime(start);
+        endInput.value = formatDateTime(end);
+        
+        updateCost();
+    }
+    
     startInput.addEventListener('change', updateCost);
     endInput.addEventListener('change', updateCost);
 </script>
