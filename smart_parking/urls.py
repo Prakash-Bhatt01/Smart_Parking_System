@@ -12,14 +12,14 @@ def service_worker(request):
             content = f.read()
         return HttpResponse(content, content_type='application/javascript')
     except FileNotFoundError:
-        return HttpResponse(
-            '/* Service Worker not found */',
-            content_type='application/javascript',
-            status=404
-        )
+        return HttpResponse('', content_type='application/javascript')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('sw.js', service_worker, name='sw'),    # ← ADD THIS
+    path('sw.js', service_worker, name='sw'),
     path('', include('parking.urls')),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
