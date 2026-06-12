@@ -10,6 +10,14 @@ A comprehensive Django-based parking management system with modern features incl
 - **User Authentication**: Secure registration and login system
 - **Vehicle Management**: Track multiple vehicles per user
 
+### Progressive Web App (PWA)
+- **Installable**: Add to home screen on mobile and desktop
+- **Offline Support**: Service worker caches static assets
+- **App-like Experience**: Standalone mode without browser UI
+- **Fast Loading**: Optimized caching strategies
+- **Cross-platform**: Works on iOS, Android, and desktop browsers
+- **Auto-updates**: Service worker handles version updates
+
 ### Payment System
 - **Demo Payment Flow**: Simulated payment processing
 - **Three-stage Workflow**: Booking → Payment → Confirmation
@@ -94,6 +102,69 @@ python manage.py runserver
 7. **Access the application**
 - Open browser and navigate to: `http://127.0.0.1:8000/`
 - Admin panel: `http://127.0.0.1:8000/admin/`
+
+## 📱 PWA Installation & Testing
+
+### Local Testing (Development)
+
+1. **Start the server**
+```bash
+python manage.py runserver
+```
+
+2. **Open in Chrome/Edge browser**
+```
+http://127.0.0.1:8000/
+```
+
+3. **Verify PWA installation**
+   - Press F12 to open DevTools
+   - Go to Application tab
+   - Check "Manifest" section - should show SmartPark details
+   - Check "Service Workers" section - should show sw.js as "activated and running"
+
+4. **Install the app**
+   - **Desktop**: Look for install icon (⊕) in address bar, click to install
+   - **Mobile Chrome**: Tap 3-dot menu (⋮) → "Add to Home Screen" → "Install"
+   - **Mobile Safari**: Tap share button → "Add to Home Screen"
+
+### Production Deployment (HTTPS Required)
+
+**⚠️ IMPORTANT**: PWA install prompt only works on HTTPS or localhost. For production deployment:
+
+1. **Deploy to HTTPS-enabled platform** (Railway, Render, Heroku, etc.)
+
+2. **Run collectstatic before deployment**
+```bash
+python manage.py collectstatic --noinput
+```
+
+3. **Environment variables to set**
+```bash
+DEBUG=False
+ALLOWED_HOSTS=your-domain.com,www.your-domain.com
+SECRET_KEY=your-production-secret-key
+```
+
+4. **Verify HTTPS is enabled** on your hosting platform
+
+5. **Test PWA on production URL**
+   - Open Chrome DevTools → Application → Manifest
+   - Verify all icons load correctly
+   - Check Service Worker is registered
+   - Test install prompt appears
+
+### PWA Features
+
+**What works offline:**
+- Static assets (CSS, JS, icons, manifest)
+- Home page (cached version)
+
+**What requires internet:**
+- Login/logout
+- Booking operations
+- Payment processing
+- Real-time data updates
 
 ## 📱 Usage
 

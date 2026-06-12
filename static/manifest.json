@@ -1,12 +1,15 @@
 {
-  "name": "SmartPark - Smart Parking",
+  "name": "SmartPark - Smart Parking System",
   "short_name": "SmartPark",
-  "description": "Find and book parking slots near you",
+  "description": "Find and book parking slots near you instantly",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#ffffff",
-  "theme_color": "#1a73e8",
+  "orientation": "portrait-primary",
+  "background_color": "#0f172a",
+  "theme_color": "#38bdf8",
+  "lang": "en",
+  "categories": ["travel", "utilities", "navigation"],
   "icons": [
     {
       "src": "/static/icon-192.png",
@@ -17,9 +20,8 @@
     {
       "src": "/static/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ],
-  "categories": ["travel", "utilities"],
-  "lang": "en"
+  ]
 }

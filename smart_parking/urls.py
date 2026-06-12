@@ -7,9 +7,16 @@ import os
 
 def service_worker(request):
     sw_path = os.path.join(settings.BASE_DIR, 'static', 'sw.js')
-    with open(sw_path, 'r') as f:
-        content = f.read()
-    return HttpResponse(content, content_type='application/javascript')
+    try:
+        with open(sw_path, 'r') as f:
+            content = f.read()
+        return HttpResponse(content, content_type='application/javascript')
+    except FileNotFoundError:
+        return HttpResponse(
+            '/* Service Worker not found */',
+            content_type='application/javascript',
+            status=404
+        )
 
 urlpatterns = [
     path('admin/', admin.site.urls),
