@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.utils import timezone
 from django.core.files.base import ContentFile
 from django.views.decorators.cache import never_cache
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from .models import ParkingLot, ParkingSlot, Booking, Vehicle, SlotConflictNotification
 from .forms import RegisterForm, BookingForm, VehicleForm
 from datetime import timedelta
@@ -259,8 +259,25 @@ def process_payment(request, booking_id):
     booking.status = 'confirmed'
     booking.save()
     
-    # Generate QR code containing Booking ID and Slot Number
+    # QR code generation removed - now handled by serve_qr_code view
+    
+    # Add success message using Django messages framework
+    messages.success(request, 'Payment successful! Your booking is confirmed.')
+    
+    # Redirect to booking_success page with booking_id
+    return redirect('booking_success', booking_id=booking.id)
+
+
+@login_required
+def serve_qr_code(request, booking_id):
+    """Generate and serve QR code dynamically for a booking."""
+    # Verify booking exists and belongs to user
+    booking = get_object_or_404(Booking, id=booking_id, user=request.user)
+    
+    # Generate QR data
     qr_data = f"Booking ID: {booking.id}\nSlot: {booking.slot.slot_number}\nLot: {booking.slot.lot.name}"
+    
+    # Create QR code
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -270,7 +287,7 @@ def process_payment(request, booking_id):
     qr.add_data(qr_data)
     qr.make(fit=True)
     
-    # Create QR code image
+    # Generate image in-memory
     img = qr.make_image(fill_color="black", back_color="white")
     
     # Save to BytesIO buffer
@@ -278,14 +295,10 @@ def process_payment(request, booking_id):
     img.save(buffer, format='PNG')
     buffer.seek(0)
     
-    # Save to booking's qr_code field
-    booking.qr_code.save(f'booking_{booking.id}_qr.png', ContentFile(buffer.read()), save=True)
-    
-    # Add success message using Django messages framework
-    messages.success(request, 'Payment successful! Your booking is confirmed.')
-    
-    # Redirect to booking_success page with booking_id
-    return redirect('booking_success', booking_id=booking.id)
+    # Return as HTTP response with caching
+    response = HttpResponse(buffer.getvalue(), content_type='image/png')
+    response['Cache-Control'] = 'public, max-age=3600'  # Cache for 1 hour
+    return response
 
 
 @login_required

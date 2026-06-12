@@ -120,12 +120,15 @@
                             </div>
                         </td>
                         <td>
-                            {% if booking.qr_code %}
-                                <a href="{{ booking.qr_code.url }}" target="_blank" title="View QR Code">
-                                    <img src="{{ booking.qr_code.url }}" alt="QR Code" style="width: 60px; height: 60px; border: 1px solid #ddd; border-radius: 4px;">
+                            {% if booking.status == 'confirmed' or booking.status == 'active' %}
+                                <a href="{% url 'serve_qr_code' booking.id %}" target="_blank" title="View QR Code">
+                                    <img src="{% url 'serve_qr_code' booking.id %}" 
+                                         alt="QR Code" 
+                                         style="width: 60px; height: 60px; border: 1px solid #ddd; border-radius: 4px;"
+                                         loading="lazy">
                                 </a>
                             {% else %}
-                                <span class="text-muted">—</span>
+                                <span class="text-muted">N/A</span>
                             {% endif %}
                         </td>
                         <td>
