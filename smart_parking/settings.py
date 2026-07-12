@@ -136,18 +136,18 @@ import cloudinary
 import cloudinary.uploader
 import cloudinary.api
 
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME', default='cr2ljcnf'),
-    'API_KEY': config('CLOUDINARY_API_KEY', default='647788816959717'),
-    'API_SECRET': config('CLOUDINARY_API_SECRET', default='4JDxu5wIhyPmgQtgJ-AINkcoALs'),
-}
-
 # Configure cloudinary
 cloudinary.config(
-    cloud_name=CLOUDINARY_STORAGE['CLOUD_NAME'],
-    api_key=CLOUDINARY_STORAGE['API_KEY'],
-    api_secret=CLOUDINARY_STORAGE['API_SECRET']
+    cloud_name='cr2ljcnf',
+    api_key='647788816959717',
+    api_secret='4JDxu5wIhyPmgQtgJ-AINkcoALs'
 )
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': 'cr2ljcnf',
+    'API_KEY': '647788816959717',
+    'API_SECRET': '4JDxu5wIhyPmgQtgJ-AINkcoALs',
+}
 
 # Use Cloudinary for media files in production
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
