@@ -86,6 +86,12 @@ class Booking(models.Model):
     created_at  = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
+        # Handle day rollover - if end_time is before start_time, assume next day
+        if self.end_time < self.start_time:
+            # Add one day to end_time
+            from datetime import timedelta
+            self.end_time = self.end_time + timedelta(days=1)
+        
         duration_hours = (self.end_time - self.start_time).total_seconds() / 3600
         if duration_hours < 0:
             duration_hours = 0

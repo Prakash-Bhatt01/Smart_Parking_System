@@ -322,11 +322,12 @@ def booking_success(request, booking_id):
 def my_bookings(request):
     now = timezone.now()
 
-    # Auto-update expired bookings
+    # Auto-update expired bookings - but only if they are truly expired and active now
     expired = Booking.objects.filter(
         user=request.user,
         status__in=['confirmed', 'active'],
-        end_time__lt=now
+        end_time__lt=now,
+        start_time__lt=now  # Only update if the booking has actually started
     )
     for booking in expired:
         overstay = (now - booking.end_time).total_seconds() / 3600
