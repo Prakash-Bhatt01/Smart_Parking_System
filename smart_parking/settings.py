@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
+    'cloudinary_storage',
+    'cloudinary',
     'parking',
 ]
 
@@ -128,6 +130,18 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Cloudinary Configuration
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME', default=''),
+    'API_KEY': config('CLOUDINARY_API_KEY', default=''),
+    'API_SECRET': config('CLOUDINARY_API_SECRET', default=''),
+}
+
+# Use Cloudinary for media files in production
+if not DEBUG:
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
