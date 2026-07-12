@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+import cloudinary
+from cloudinary.models import CloudinaryField
 
 
 class ParkingLot(models.Model):
@@ -18,7 +20,7 @@ class ParkingLot(models.Model):
     fine_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     price_per_hour = models.DecimalField(max_digits=6, decimal_places=2)
     vehicle_type = models.CharField(max_length=10, choices=VEHICLE_TYPES, default='car')
-    image = models.ImageField(upload_to='parking_lots/', blank=True, null=True)
+    image = CloudinaryField('image', blank=True, null=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

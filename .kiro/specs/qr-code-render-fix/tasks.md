@@ -24,7 +24,7 @@ The current system generates QR codes during payment processing and saves them a
 
 ## Tasks
 
-- [ ] 1. Create dynamic QR code generation view
+- [x] 1. Create dynamic QR code generation view
   - Add new `serve_qr_code` function to `parking/views.py`
   - Implement `@login_required` decorator for authentication
   - Retrieve booking by ID and verify ownership with `user=request.user`
@@ -33,12 +33,12 @@ The current system generates QR codes during payment processing and saves them a
   - Add `Cache-Control: public, max-age=3600` header for browser caching
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 2.1, 2.2, 2.3, 2.4, 2.5, 6.1, 6.2, 6.3, 6.4_
 
-- [ ] 2. Add URL routing for QR code view
+- [x] 2. Add URL routing for QR code view
   - Update `parking/urls.py` to add URL pattern: `path('qr/<int:booking_id>/', views.serve_qr_code, name='serve_qr_code')`
   - Verify URL pattern validates booking_id as integer type
   - _Requirements: 3.1, 3.2, 3.3, 3.4_
 
-- [ ] 3. Remove QR generation from payment processing
+- [x] 3. Remove QR generation from payment processing
   - Modify `process_payment` function in `parking/views.py`
   - Remove all QR code generation logic (lines creating qr object, image, buffer)
   - Remove `booking.qr_code.save()` call
@@ -46,14 +46,14 @@ The current system generates QR codes during payment processing and saves them a
   - Keep success message and redirect logic
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-- [ ] 4. Checkpoint - Verify backend implementation
+- [x] 4. Checkpoint - Verify backend implementation
   - Run development server locally
   - Test that serve_qr_code view is accessible
   - Verify URL routing works for `/qr/<id>/`
   - Check that process_payment no longer generates files
   - Ask the user if questions arise
 
-- [ ] 5. Update my_bookings.html template
+- [x] 5. Update my_bookings.html template
   - Locate QR code display section in `templates/my_bookings.html`
   - Replace `{% if booking.qr_code %}` condition with `{% if booking.status == 'confirmed' or booking.status == 'active' %}`
   - Change `src="{{ booking.qr_code.url }}"` to `src="{% url 'serve_qr_code' booking.id %}"`
@@ -62,7 +62,7 @@ The current system generates QR codes during payment processing and saves them a
   - Update else clause to show "N/A" for non-confirmed bookings
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 8.1, 8.2, 8.3_
 
-- [ ] 6. Update booking_success.html template (if exists)
+- [x] 6. Update booking_success.html template (if exists)
   - Search `templates/booking_success.html` for QR code references
   - If QR code is displayed, update using same pattern as my_bookings.html
   - Replace `booking.qr_code.url` with `{% url 'serve_qr_code' booking.id %}`
@@ -70,7 +70,7 @@ The current system generates QR codes during payment processing and saves them a
   - If file doesn't exist or no QR code displayed, skip this task
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [ ] 7. Search and update any other templates with QR references
+- [x] 7. Search and update any other templates with QR references
   - Search all templates in `templates/` directory for `booking.qr_code`
   - Check `booking_detail.html`, admin templates, email templates
   - Update any found references using the same pattern
@@ -78,7 +78,7 @@ The current system generates QR codes during payment processing and saves them a
   - If no other references found, mark this task complete
   - _Requirements: 5.1, 8.3_
 
-- [ ] 8. Checkpoint - Test complete implementation locally
+- [x] 8. Checkpoint - Test complete implementation locally
   - Run `python manage.py runserver`
   - Login as a user and create a new booking
   - Complete payment and verify redirect to success page
@@ -109,7 +109,7 @@ The current system generates QR codes during payment processing and saves them a
   - Test lazy loading attribute is present in template
   - _Requirements: 1.1, 5.4, 6.1, 6.2, 9.1, 9.3_
 
-- [ ] 11. Prepare for deployment
+- [x] 11. Prepare for deployment
   - Commit all changes with message: "Fix: Dynamic QR code generation for Render ephemeral filesystem"
   - Verify no new dependencies added to requirements.txt
   - Review changes: `git diff` to ensure only intended files modified
@@ -117,7 +117,7 @@ The current system generates QR codes during payment processing and saves them a
   - Push changes to GitHub repository
   - _Requirements: 10.1, 10.2_
 
-- [ ] 12. Deploy to Render and verify production
+- [~] 12. Deploy to Render and verify production
   - Push changes to main branch (triggers auto-deploy on Render)
   - Monitor Render deployment logs for successful build
   - Wait for deployment to complete
@@ -132,7 +132,7 @@ The current system generates QR codes during payment processing and saves them a
   - **Success criteria:** QR code still displays correctly (not 404)
   - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6_
 
-- [ ] 13. Verify performance and caching in production
+- [~] 13. Verify performance and caching in production
   - Check Render logs for any errors related to QR generation
   - Use browser DevTools Network tab to measure QR generation time
   - Verify QR codes load in less than 200ms on production
@@ -142,7 +142,7 @@ The current system generates QR codes during payment processing and saves them a
   - Monitor Render CPU usage - ensure it remains within free tier limits
   - _Requirements: 6.1, 6.2, 6.3, 9.1, 9.2, 9.3, 9.4, 9.5_
 
-- [ ] 14. Final verification and cleanup
+- [~] 14. Final verification and cleanup
   - Test complete user journey: login → book slot → payment → view bookings → access QR
   - Verify QR codes work for both car and bike bookings
   - Test with different browsers (Chrome, Firefox, Safari if available)
@@ -189,13 +189,13 @@ If issues arise during deployment:
 
 ## Success Criteria
 
-- [ ] QR codes display correctly on Render production
-- [ ] No 404 errors after container restarts
-- [ ] QR codes survive redeployments
-- [ ] Booking workflow completes end-to-end
-- [ ] QR codes are scannable with mobile apps
-- [ ] Solution remains 100% free
-- [ ] No external dependencies or API keys required
-- [ ] Page load performance is acceptable (<200ms per QR)
-- [ ] Browser caching reduces subsequent load times
-- [ ] All tests pass (unit + integration, if written)
+- [~] QR codes display correctly on Render production
+- [~] No 404 errors after container restarts
+- [~] QR codes survive redeployments
+- [~] Booking workflow completes end-to-end
+- [~] QR codes are scannable with mobile apps
+- [~] Solution remains 100% free
+- [~] No external dependencies or API keys required
+- [~] Page load performance is acceptable (<200ms per QR)
+- [~] Browser caching reduces subsequent load times
+- [~] All tests pass (unit + integration, if written)
