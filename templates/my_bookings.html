@@ -133,19 +133,29 @@
                         </td>
                         <td>
                             {% if booking.status == 'confirmed' or booking.status == 'pending' or booking.status == 'active' %}
-                            <form action="{% url 'cancel_booking' booking.id %}" method="post" style="display:inline;">
-                                {% csrf_token %}
-                                <button type="submit" class="btn-danger-sm" onclick="return confirm('Cancel this booking?')">
-                                    <i class="fas fa-times"></i> Cancel
-                                </button>
-                            </form>
-                            {% if booking.time_extended_by < 60 %}
-                                {% if booking.status == 'confirmed' or booking.status == 'active' %}
-                            <button class="btn-extend-sm" onclick="openExtendModal({{ booking.id }}, '{{ booking.end_time|date:'g:i A' }}', {{ booking.time_extended_by }})">
-                                <i class="fas fa-clock"></i> Extend Time
-                            </button>
+                            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                                {% if booking.status == 'active' %}
+                                <form action="{% url 'end_parking' booking.id %}" method="post" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-success-sm" onclick="return confirm('End parking session?')">
+                                        <i class="fas fa-stop-circle"></i> End Parking
+                                    </button>
+                                </form>
                                 {% endif %}
-                            {% endif %}
+                                <form action="{% url 'cancel_booking' booking.id %}" method="post" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-danger-sm" onclick="return confirm('Cancel this booking?')">
+                                        <i class="fas fa-times"></i> Cancel
+                                    </button>
+                                </form>
+                                {% if booking.time_extended_by < 60 %}
+                                    {% if booking.status == 'confirmed' or booking.status == 'active' %}
+                                <button class="btn-extend-sm" onclick="openExtendModal({{ booking.id }}, '{{ booking.end_time|date:'g:i A' }}', {{ booking.time_extended_by }})">
+                                    <i class="fas fa-clock"></i> Extend Time
+                                </button>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
                             {% else %}<span class="text-muted">—</span>{% endif %}
                         </td>
                     </tr>
@@ -244,25 +254,28 @@
                         <td style="color:var(--danger);font-weight:700;">₹{{ booking.fine_amount }}</td>
                         <td><strong>₹{{ booking.total_cost|add:booking.fine_amount }}</strong></td>
                         <td>
-                            <div style="display:flex;gap:6px;align-items:center;">
-                                <form action="{% url 'extend_booking' booking.id %}" method="post" style="display:inline;">
+                            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                                <form action="{% url 'end_parking' booking.id %}" method="post" style="display:inline;">
                                     {% csrf_token %}
-                                    <input type="hidden" name="extend_minutes" value="10">
-                                    <button type="submit" class="btn-sm" title="Increase 10 minutes">+10m</button>
+                                    <button type="submit" class="btn-success-sm" onclick="return confirm('End parking and pay overstay fine?')">
+                                        <i class="fas fa-stop-circle"></i> End Parking
+                                    </button>
                                 </form>
+                                {% if booking.time_extended_by < 60 %}
                                 <form action="{% url 'extend_booking' booking.id %}" method="post" style="display:inline;">
                                     {% csrf_token %}
                                     <input type="hidden" name="extend_minutes" value="30">
-                                    <button type="submit" class="btn-sm" title="Increase 30 minutes">+30m</button>
+                                    <button type="submit" class="btn-sm" title="Extend 30 minutes">+30m</button>
                                 </form>
                                 <form action="{% url 'extend_booking' booking.id %}" method="post" style="display:inline;">
                                     {% csrf_token %}
                                     <input type="hidden" name="extend_minutes" value="60">
-                                    <button type="submit" class="btn-sm" title="Increase 60 minutes">+60m</button>
+                                    <button type="submit" class="btn-sm" title="Extend 60 minutes">+60m</button>
                                 </form>
+                                {% endif %}
                                 <form action="{% url 'cancel_booking' booking.id %}" method="post" style="display:inline;">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn-danger-sm" onclick="return confirm('Cancel this booking?')">Cancel</button>
+                                    <button type="submit" class="btn-danger-sm" onclick="return confirm('Cancel and pay current overstay fine?')">Cancel</button>
                                 </form>
                             </div>
                         </td>
@@ -437,6 +450,46 @@ function showTab(tab, btn) {
     document.getElementById('tab-' + tab).style.display = 'block';
     btn.classList.add('active');
 }
+
+function updateOverstayFines() {
+    // Update overstay fines for bookings in overstay status
+    document.querySelectorAll('#tab-overstay tbody tr[data-booking-id]').forEach(function(row) {
+        const endStr = row.dataset.end;
+        if (!endStr) return;
+        
+        const endTime = new Date(endStr);
+        const now = new Date();
+        
+        if (now > endTime) {
+            // Calculate overstay hours
+            const overstayMs = now - endTime;
+            const overstayHours = overstayMs / (1000 * 60 * 60);
+            
+            // Get parking cost (assume it's in a data attribute or visible)
+            const bookingId = row.dataset.bookingId;
+            
+            // Update the fine display (this is visual only, actual calculation happens on server)
+            const fineCell = row.querySelector('td:nth-child(8)'); // Fine column
+            if (fineCell && overstayHours > 0) {
+                const overstayText = document.createElement('small');
+                overstayText.style.display = 'block';
+                overstayText.style.color = '#dc3545';
+                overstayText.textContent = `(${overstayHours.toFixed(1)}h overstay)`;
+                
+                // Only add if not already present
+                if (!fineCell.querySelector('small')) {
+                    fineCell.appendChild(overstayText);
+                } else {
+                    fineCell.querySelector('small').textContent = `(${overstayHours.toFixed(1)}h overstay)`;
+                }
+            }
+        }
+    });
+}
+
+// Update overstay fines every minute
+setInterval(updateOverstayFines, 60000);
+updateOverstayFines(); // Initial call
 
 function updateTimers() {
     document.querySelectorAll('.countdown-timer').forEach(function(el) {

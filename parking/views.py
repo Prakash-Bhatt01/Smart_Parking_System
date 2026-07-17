@@ -322,25 +322,33 @@ def booking_success(request, booking_id):
 def my_bookings(request):
     now = timezone.now()
 
-    # Auto-update expired bookings - but only if they are truly expired and active now
-    expired = Booking.objects.filter(
-        user=request.user,
+    # Auto-update booking statuses
+    user_bookings = Booking.objects.filter(user=request.user)
+    
+    # 1. Handle Active → Overstay transition
+    active_expired = user_bookings.filter(
         status__in=['confirmed', 'active'],
         end_time__lt=now,
-        start_time__lt=now  # Only update if the booking has actually started
+        start_time__lt=now  # Only for bookings that have actually started
     )
-    for booking in expired:
-        overstay = (now - booking.end_time).total_seconds() / 3600
-        if overstay > 0.5:
-            fine = round(overstay * float(booking.slot.lot.price_per_hour) * 2, 2)
-            booking.fine_amount = fine
-            booking.status = 'overstay'
-        else:
-            booking.status = 'completed'
-            booking.slot.is_available = True
-            booking.slot.save()
-        booking.save()
+    for booking in active_expired:
+        booking.update_to_overstay()
 
+    # 2. Update ongoing overstay fines
+    overstay_bookings = user_bookings.filter(status='overstay')
+    for booking in overstay_bookings:
+        booking.update_overstay_fine()
+
+    # 3. Auto-complete very old bookings (24+ hours overstay) - Optional safety net
+    very_old_overstay = overstay_bookings.filter(
+        end_time__lt=now - timedelta(hours=24)
+    )
+    for booking in very_old_overstay:
+        # Only auto-complete if fine is calculated and very old
+        if booking.fine_amount > 0:
+            booking.complete_booking()
+
+    # Fetch updated booking lists
     active_bookings = Booking.objects.filter(
         user=request.user
     ).exclude(
@@ -385,13 +393,19 @@ def my_bookings(request):
 def cancel_booking(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id, user=request.user)
     if booking.status in ['confirmed', 'pending', 'active', 'overstay']:
-        # If the booking is currently active or overstaying, end it at cancellation time so cost is calculated correctly
+        # Use the new complete_booking method for active/overstay bookings
         if booking.status in ['active', 'overstay']:
-            booking.end_time = timezone.now()
-        booking.status = 'cancelled'
-        booking.save()
-        booking.slot.is_available = True
-        booking.slot.save()
+            # This will calculate final overstay fine if needed
+            booking.complete_booking(end_now=True)
+            # Then mark as cancelled
+            booking.status = 'cancelled'
+            booking.save()
+        else:
+            # For pending/confirmed bookings, just cancel
+            booking.status = 'cancelled'
+            booking.save()
+            booking.slot.is_available = True
+            booking.slot.save()
         
         messages.success(request, 'Booking cancelled.')
     return redirect('my_bookings')
@@ -481,6 +495,25 @@ def extend_booking(request, booking_id):
         request, 
         f'Parking time extended by {extend_minutes} minutes. New end time is {new_end_time}. Additional cost added.'
     )
+    
+    return redirect('my_bookings')
+
+
+@login_required
+def end_parking(request, booking_id):
+    """End parking session - for active or overstay bookings"""
+    booking = get_object_or_404(Booking, id=booking_id, user=request.user)
+    
+    if booking.status in ['active', 'overstay']:
+        # Complete the booking and calculate final costs
+        booking.complete_booking(end_now=True)
+        
+        if booking.fine_amount > 0:
+            messages.success(request, f'Parking ended. Total cost: ₹{booking.total_cost + booking.fine_amount} (including ₹{booking.fine_amount} overstay fine)')
+        else:
+            messages.success(request, f'Parking ended. Total cost: ₹{booking.total_cost}')
+    else:
+        messages.error(request, 'This booking cannot be ended.')
     
     return redirect('my_bookings')
 

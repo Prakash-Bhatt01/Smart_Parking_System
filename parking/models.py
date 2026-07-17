@@ -99,17 +99,67 @@ class Booking(models.Model):
         super().save(*args, **kwargs)
 
     def is_expired(self):
+        """Check if booking has passed its end time"""
         return timezone.now() > self.end_time and self.status in ['confirmed', 'active']
 
     def is_active_now(self):
+        """Check if booking is currently active (within time range)"""
         now = timezone.now()
         return self.start_time <= now <= self.end_time and self.status in ['confirmed', 'active']
 
+    def is_overstaying(self):
+        """Check if booking is currently overstaying"""
+        return timezone.now() > self.end_time and self.status == 'overstay'
+
     def overstay_hours(self):
+        """Calculate current overstay duration in hours"""
         if timezone.now() > self.end_time and self.status in ['confirmed', 'active', 'overstay']:
             diff = timezone.now() - self.end_time
-            return round(diff.total_seconds() / 3600, 1)
+            return round(diff.total_seconds() / 3600, 2)  # More precise calculation
         return 0
+
+    def calculate_overstay_fine(self):
+        """Calculate current overstay fine based on lot's fine rate"""
+        overstay_hrs = self.overstay_hours()
+        if overstay_hrs > 0:
+            # Fine rate: 2x the parking rate per hour for overstay
+            fine_rate_per_hour = float(self.slot.lot.price_per_hour) * 2
+            return round(overstay_hrs * fine_rate_per_hour, 2)
+        return 0
+
+    def update_to_overstay(self):
+        """Transition booking to overstay status and calculate fine"""
+        if self.is_expired():
+            self.status = 'overstay'
+            self.fine_amount = self.calculate_overstay_fine()
+            # Keep slot unavailable during overstay
+            self.slot.is_available = False
+            self.slot.save()
+            self.save()
+            return True
+        return False
+
+    def update_overstay_fine(self):
+        """Update fine amount for ongoing overstay"""
+        if self.status == 'overstay':
+            self.fine_amount = self.calculate_overstay_fine()
+            self.save()
+            return True
+        return False
+
+    def complete_booking(self, end_now=False):
+        """Complete booking and release slot"""
+        if end_now and self.status in ['active', 'overstay']:
+            # User is ending parking early or ending overstay
+            self.end_time = timezone.now()
+            if self.status == 'overstay':
+                # Calculate final overstay fine
+                self.fine_amount = self.calculate_overstay_fine()
+        
+        self.status = 'completed'
+        self.slot.is_available = True
+        self.slot.save()
+        self.save()
 
     def __str__(self):
         return f"Booking #{self.id} by {self.user.username}"
