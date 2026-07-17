@@ -40,6 +40,20 @@
 .fine-amount {
     font-family: 'Courier New', monospace;
 }
+
+.overstay-action-display {
+    border-left: 3px solid #dc3545;
+    padding-left: 8px;
+    background: rgba(220, 53, 69, 0.05);
+    border-radius: 4px;
+    padding: 6px 8px;
+}
+
+.action-timer-text {
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    color: #dc3545;
+}
 </style>
 
 <div class="page-banner">
@@ -299,6 +313,10 @@
                         <td><strong>₹<span class="total-cost" data-base-cost="{{ booking.total_cost }}">{{ booking.total_cost|add:booking.fine_amount }}</span></strong></td>
                         <td>
                             <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                                <div class="overstay-action-display" data-booking-id="{{ booking.id }}" style="width:100%;margin-bottom:8px;color:var(--danger);font-weight:600;font-size:0.85rem;">
+                                    Overstaying: <span class="action-timer-text">00:00:00</span><br>
+                                    <span style="font-size:0.75rem;color:#666;">Please extend or end parking.</span>
+                                </div>
                                 <form action="{% url 'end_parking' booking.id %}" method="post" style="display:inline;">
                                     {% csrf_token %}
                                     <button type="submit" class="btn-success-sm" onclick="return confirm('End parking and pay overstay fine?')">
@@ -505,7 +523,9 @@ class OverstayManager {
     }
 
     discoverOverstayBookings() {
-        document.querySelectorAll('.overstay-timer-display').forEach(display => {
+        // Find overstay bookings from both Fine column and Action column displays
+        const displays = document.querySelectorAll('.overstay-timer-display, .overstay-action-display');
+        displays.forEach(display => {
             const bookingId = display.dataset.bookingId;
             if (bookingId) {
                 this.overstayBookings.add(bookingId);
@@ -552,36 +572,45 @@ class OverstayManager {
             const data = await response.json();
             
             const display = document.querySelector(`.overstay-timer-display[data-booking-id="${bookingId}"]`);
-            if (!display) return;
-
-            const timerText = display.querySelector('.timer-text');
-            const fineAmount = display.querySelector('.fine-amount');
-            const totalCost = document.querySelector(`tr[data-booking-id="${bookingId}"] .total-cost`);
+            const actionDisplay = document.querySelector(`.overstay-action-display[data-booking-id="${bookingId}"]`);
+            if (!display && !actionDisplay) return;
 
             if (data.is_overstay) {
-                // Update timer
-                if (timerText) {
-                    timerText.textContent = data.overstay_formatted;
+                // Update Fine column timer
+                if (display) {
+                    const timerText = display.querySelector('.timer-text');
+                    const fineAmount = display.querySelector('.fine-amount');
+                    
+                    if (timerText) {
+                        timerText.textContent = data.overstay_formatted;
+                    }
+
+                    if (fineAmount) {
+                        fineAmount.textContent = data.fine_amount.toFixed(2);
+                    }
+
+                    display.classList.add('overstay-active');
                 }
 
-                // Update fine
-                if (fineAmount) {
-                    fineAmount.textContent = data.fine_amount.toFixed(2);
+                // Update Action column timer (new addition)
+                if (actionDisplay) {
+                    const actionTimerText = actionDisplay.querySelector('.action-timer-text');
+                    if (actionTimerText) {
+                        actionTimerText.textContent = data.overstay_formatted;
+                    }
                 }
 
                 // Update total cost
+                const totalCost = document.querySelector(`tr[data-booking-id="${bookingId}"] .total-cost`);
                 if (totalCost) {
                     const baseCost = parseFloat(totalCost.dataset.baseCost) || 0;
                     const newTotal = baseCost + data.fine_amount;
                     totalCost.textContent = `₹${newTotal.toFixed(2)}`;
                 }
-
-                // Add visual pulsing effect for active overstay
-                display.classList.add('overstay-active');
             } else {
                 // Remove from tracking if no longer overstaying
                 this.overstayBookings.delete(bookingId);
-                display.classList.remove('overstay-active');
+                if (display) display.classList.remove('overstay-active');
             }
         } catch (error) {
             console.error(`Error updating overstay for booking ${bookingId}:`, error);
@@ -716,41 +745,9 @@ setInterval(updateTimers, 1000);
 updateTimers();
 
 function startOverstayAlerts() {
-    const rows = document.querySelectorAll('#tab-overstay tbody tr[data-end]');
-    rows.forEach(row => {
-        const endStr = row.dataset.end;
-        const bookingId = row.dataset.bookingId;
-        if (!endStr) return;
-        const endTime = new Date(endStr);
-
-        function notifyNow() {
-            const now = new Date();
-            if (now <= endTime) return; // not yet overstay
-            const overMinutes = Math.floor((now - endTime) / 60000);
-            // inline warning
-            let warn = row.querySelector('.overstay-warning-inline');
-            if (!warn) {
-                warn = document.createElement('div');
-                warn.className = 'overstay-warning-inline';
-                warn.style = 'color:#c0392b;font-weight:700;margin-top:6px;';
-                // insert before the action cell
-                const actionCell = row.querySelector('td:last-child');
-                if (actionCell) actionCell.insertAdjacentElement('beforebegin', warn);
-            }
-            warn.textContent = `Overstaying: ${overMinutes} min — please extend or cancel.`;
-
-            if (Notification.permission === 'granted') {
-                new Notification('SmartPark — Overstay Alert', {
-                    body: `Booking #${bookingId} is overstaying by ${overMinutes} min.`,
-                    icon: '/static/icon-192.png'
-                });
-            }
-        }
-
-        // immediate notify + schedule every 10 minutes
-        notifyNow();
-        setInterval(notifyNow, 10 * 60 * 1000);
-    });
+    // Legacy function - now handled by OverstayManager with real-time updates
+    // Keeping for compatibility but functionality moved to OverstayManager
+    console.log('Overstay alerts now handled by OverstayManager');
 }
 
 startOverstayAlerts();
