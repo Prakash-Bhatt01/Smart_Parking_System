@@ -335,12 +335,12 @@ def my_bookings(request):
         booking.update_to_overstay()
 
     # 2. Update ongoing overstay fines
-    overstay_bookings = user_bookings.filter(status='overstay')
-    for booking in overstay_bookings:
+    overstay_bookings_queryset = user_bookings.filter(status='overstay')
+    for booking in overstay_bookings_queryset:
         booking.update_overstay_fine()
 
     # 3. Auto-complete very old bookings (24+ hours overstay) - Optional safety net
-    very_old_overstay = overstay_bookings.filter(
+    very_old_overstay = overstay_bookings_queryset.filter(
         end_time__lt=now - timedelta(hours=24)
     )
     for booking in very_old_overstay:
@@ -516,6 +516,45 @@ def end_parking(request, booking_id):
         messages.error(request, 'This booking cannot be ended.')
     
     return redirect('my_bookings')
+
+
+@login_required
+def get_overstay_data(request, booking_id):
+    """AJAX endpoint for real-time overstay timer and fine updates"""
+    booking = get_object_or_404(Booking, id=booking_id, user=request.user)
+    
+    now = timezone.now()
+    
+    # Calculate current overstay data
+    if booking.status == 'overstay' and now > booking.end_time:
+        overstay_seconds = (now - booking.end_time).total_seconds()
+        overstay_hours = overstay_seconds / 3600
+        
+        # Calculate fine using the same logic as the model
+        fine_rate_per_hour = float(booking.slot.lot.price_per_hour) * 2
+        current_fine = round(overstay_hours * fine_rate_per_hour, 2)
+        
+        # Format time as HH:MM:SS
+        hours = int(overstay_seconds // 3600)
+        minutes = int((overstay_seconds % 3600) // 60)
+        seconds = int(overstay_seconds % 60)
+        
+        return JsonResponse({
+            'is_overstay': True,
+            'overstay_seconds': int(overstay_seconds),
+            'overstay_formatted': f"{hours:02d}:{minutes:02d}:{seconds:02d}",
+            'fine_amount': current_fine,
+            'server_time': now.isoformat(),
+            'end_time': booking.end_time.isoformat(),
+        })
+    else:
+        return JsonResponse({
+            'is_overstay': False,
+            'overstay_seconds': 0,
+            'overstay_formatted': "00:00:00",
+            'fine_amount': 0,
+            'server_time': now.isoformat(),
+        })
 
 
 @login_required

@@ -14,6 +14,7 @@ urlpatterns = [
     path('profile/',                         views.profile_view,    name='profile'),
     path('cancel/<int:booking_id>/',         views.cancel_booking,  name='cancel_booking'),
     path('end-parking/<int:booking_id>/',    views.end_parking,     name='end_parking'),
+    path('overstay-data/<int:booking_id>/',  views.get_overstay_data, name='get_overstay_data'),
     path('extend/<int:booking_id>/',         views.extend_booking,  name='extend_booking'),
     path('mark-notification-read/<int:notification_id>/', views.mark_notification_read, name='mark_notification_read'),
     path('qr/<int:booking_id>/',             views.serve_qr_code,   name='serve_qr_code'),
